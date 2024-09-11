@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenterSystem.Core.Entities.project;
 
+
 namespace StudentProjectsCenterSystem.Infrastructure.Data
 {
     public class ApplicationDbContext : IdentityDbContext
@@ -18,6 +19,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
+            builder.ApplyConfigurationsFromAssembly(typeof(Configurations.ProjectConfiguration).Assembly);
             base.OnModelCreating(builder);
         }
 

@@ -8,8 +8,16 @@ namespace StudentProjectsCenterSystem.mapping_profile
     {
         public MappingProfile()
         {
-            CreateMap<Project, ProjectDTO>();
-                //.ForMember(To => To.Name, from => from.MapFrom(x => x.Name != null ? x. . : null));
+            CreateMap<Project, ProjectDTO>().ReverseMap();
+            CreateMap<Project, ProjectDetailsDTO>().ReverseMap();
+
+            CreateMap<Project, ProjectCreateDTO>()
+                .ForMember(dest => dest.ProjectDetails, opt => opt.MapFrom(src => src.ProjectDetails))
+                .ReverseMap()
+                .ForMember(dest => dest.ProjectDetails, opt => opt.MapFrom(src => src.ProjectDetails));
+
+            CreateMap<ProjectDetails, ProjectDetailsCreateDTO>().ReverseMap();
+            CreateMap<Project, ProjectUpdateDTO>().ReverseMap();
         }
             
     }
