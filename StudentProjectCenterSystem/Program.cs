@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
 using StudentProjectsCenterSystem.Infrastructure.Repositories;
@@ -28,6 +31,19 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = (actionContext) =>
+                {
+                    var errors = actionContext.ModelState.Where(x => x.Value?.Errors.Count() > 0)
+                                                                .SelectMany(x => x.Value.Errors)
+                                                                .Select(e => e.ErrorMessage)
+                                                                .ToList();
+                    var validationResponse = new ApiValidationResponse(errors);
+                    return new BadRequestObjectResult(validationResponse);
+                };
+            });
 
             var app = builder.Build();
 

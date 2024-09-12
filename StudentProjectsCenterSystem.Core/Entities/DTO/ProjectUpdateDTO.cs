@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace StudentProjectsCenterSystem.Core.Entities.DTO
 {
-    public class ProjectUpdateDT
+    public class ProjectUpdateDTO
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
