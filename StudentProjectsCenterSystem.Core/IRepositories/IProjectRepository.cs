@@ -9,6 +9,6 @@ namespace StudentProjectsCenterSystem.Core.IRepositories
 {
     public interface IProjectRepository : IGenericRepository<Project>
     {
-        
+        public Task<Project> GetByIdWithDetails(int id);
     }
 }
