@@ -1,11 +1,9 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using StudentProjectsCenterSystem.Infrastructure.Data;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
@@ -15,52 +13,39 @@ namespace StudentProjectsCenterSystem.Controllers
     {
         private readonly IUnitOfWork<Project> unitOfWork;
         private readonly IMapper mapper;
-        private ApiResponse apiResponse;
 
         public ProjectController(IUnitOfWork<Project> unitOfWork, IMapper mapper)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
-            apiResponse = new ApiResponse();
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse>> getAll()
+        public async Task<ActionResult<ApiResponse>> GetAll()
         {
             var model = await unitOfWork.projectRepository.GetAll();
-            apiResponse.StatusCode = System.Net.HttpStatusCode.OK;
+
             if (!model.Any())
             {
-                apiResponse.IsSuccess = false;
-                apiResponse.ErrorMessages = "No Projects Found!";
+                return new ApiResponse(404, "No Projects Found");
             }
-            else
-            {
-                apiResponse.IsSuccess = true;
-                var viewModel = mapper.Map<List<ProjectDTO>>(model);
-                apiResponse.Result = viewModel;
-            }
-            return apiResponse;
+
+            var viewModel = mapper.Map<List<ProjectDTO>>(model);
+            return new ApiResponse(200, "Projects retrieved successfully", viewModel);
         }
 
-        [HttpGet("id")]
-        public async Task<ActionResult<ApiResponse>> getById(int id)
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ApiResponse>> GetById(int id)
         {
             var model = await unitOfWork.projectRepository.GetByIdWithDetails(id);
-            if(model == null)
+            if (model == null)
             {
-                apiResponse.IsSuccess = false;
-                apiResponse.StatusCode= System.Net.HttpStatusCode.NotFound;
-                apiResponse.ErrorMessages = "No Projects Found!";
+                return NotFound(new ApiResponse(404, "No Projects Found!"));
             }
-            else
-            {
-                apiResponse.IsSuccess = true;
-                apiResponse.StatusCode = System.Net.HttpStatusCode.OK;
-                var viewModel = mapper.Map<ProjectDetailsDTO>(model);
-                apiResponse.Result = viewModel;
-            }
-            return apiResponse;
+
+            var viewModel = mapper.Map<ProjectDetailsDTO>(model);
+            return Ok(new ApiResponse(200, result: viewModel));
         }
 
         [HttpPost]
@@ -69,42 +54,22 @@ namespace StudentProjectsCenterSystem.Controllers
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                               .Select(e => e.ErrorMessage)
-                                               .ToList();
-                var errorResponse = new ApiResponse
-                {
-                    StatusCode = System.Net.HttpStatusCode.BadRequest,
-                    IsSuccess = false,
-                    ErrorMessages = string.Join(", ", errors)
-                };
-                return BadRequest(errorResponse);
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+                return BadRequest(new ApiValidationResponse(errors));
             }
 
             var model = mapper.Map<Project>(project);
-
             await unitOfWork.projectRepository.Create(model);
             int success = await unitOfWork.save();
 
             if (success == 0)
             {
-                var failureResponse = new ApiResponse
-                {
-                    StatusCode = System.Net.HttpStatusCode.InternalServerError,
-                    IsSuccess = false,
-                    ErrorMessages = "Create Failed"
-                };
-                return StatusCode((int)System.Net.HttpStatusCode.InternalServerError, failureResponse);
+                return StatusCode(500, new ApiResponse(500, "Create Failed"));
             }
 
-            var successResponse = new ApiResponse
-            {
-                StatusCode = System.Net.HttpStatusCode.Created,
-                IsSuccess = true,
-                Result = project
-            };
-            return CreatedAtAction(nameof(Create), new { id = success }, successResponse);
+            return CreatedAtAction(nameof(Create), new { id = success }, new ApiResponse(201, result: project));
         }
-
 
         [HttpPut]
         public async Task<ActionResult<ApiResponse>> Update(ProjectUpdateDTO project)
@@ -112,78 +77,46 @@ namespace StudentProjectsCenterSystem.Controllers
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                               .Select(e => e.ErrorMessage)
-                                               .ToList();
-                var errorResponse = new ApiResponse
-                {
-                    StatusCode = System.Net.HttpStatusCode.BadRequest,
-                    IsSuccess = false,
-                    ErrorMessages = string.Join(", ", errors)
-                };
-                return BadRequest(errorResponse);
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+                return BadRequest(new ApiValidationResponse(errors));
             }
 
             var existingProject = await unitOfWork.projectRepository.GetById(project.Id);
             if (existingProject == null)
             {
-                var notFoundResponse = new ApiResponse
-                {
-                    StatusCode = System.Net.HttpStatusCode.NotFound,
-                    IsSuccess = false,
-                    ErrorMessages = "Project not found"
-                };
-                return NotFound(notFoundResponse);
+                return NotFound(new ApiResponse(404, "Project not found"));
             }
 
             mapper.Map(project, existingProject);
-
             unitOfWork.projectRepository.Update(existingProject);
             int success = await unitOfWork.save();
 
             if (success == 0)
             {
-                var failureResponse = new ApiResponse
-                {
-                    StatusCode = System.Net.HttpStatusCode.InternalServerError,
-                    IsSuccess = false,
-                    ErrorMessages = "Update Failed"
-                };
-                return StatusCode((int)System.Net.HttpStatusCode.InternalServerError, failureResponse);
+                return StatusCode(500, new ApiResponse(500, "Update Failed"));
             }
 
-            var successResponse = new ApiResponse
-            {
-                StatusCode = System.Net.HttpStatusCode.OK,
-                IsSuccess = true,
-                Result = existingProject
-            };
-            return Ok(successResponse);
+            return Ok(new ApiResponse(200, result: existingProject));
         }
 
-
-
-        [HttpDelete]
+        [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse>> Delete(int id)
         {
-            unitOfWork.projectRepository.Delete(id);
-            int success = await unitOfWork.save();
-            if (success == 0)
+            int successDelete = unitOfWork.projectRepository.Delete(id);
+            if(successDelete == 0)
             {
-                var failureResponse = new ApiResponse
-                {
-                    StatusCode = System.Net.HttpStatusCode.InternalServerError,
-                    IsSuccess = false,
-                    ErrorMessages = "Deletion failed!"
-                };
-                return StatusCode((int)System.Net.HttpStatusCode.InternalServerError, failureResponse);
+                return NotFound(new ApiResponse(404));
             }
 
-            var successResponse = new ApiResponse
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
             {
-                StatusCode = System.Net.HttpStatusCode.OK,
-                IsSuccess = true,
-            };
-            return successResponse;
+                return StatusCode(500, new ApiResponse(500, "Deleted failed!"));
+            }
+
+            return Ok(new ApiResponse(200, "Deleted Successfully"));
         }
+
     }
 }

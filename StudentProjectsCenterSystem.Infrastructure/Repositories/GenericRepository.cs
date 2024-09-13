@@ -23,13 +23,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             await dbContext.Set<T>().AddAsync(model);
         }
 
-        public void Delete(int id)
+        public int Delete(int id)
         {
             var model = dbContext.Set<T>().Find(id);
             if(model != null)
             {
                 dbContext.Set<T>().Remove(model);
+                return 1;
             }
+            return 0;
         }
 
         public async Task<IEnumerable<T>> GetAll()

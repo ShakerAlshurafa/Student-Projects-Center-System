@@ -6,6 +6,6 @@
         public Task<T> GetById(int id);
         public Task Create(T model);
         public void Update(T model);
-        public void Delete(int id);
+        public int Delete(int id);
     }
 }
