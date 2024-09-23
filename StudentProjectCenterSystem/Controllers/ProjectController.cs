@@ -21,9 +21,9 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse>> GetAll()
+        public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
-            var model = await unitOfWork.projectRepository.GetAll();
+            var model = await unitOfWork.projectRepository.GetAll(PageSize, PageNumber);
 
             if (!model.Any())
             {

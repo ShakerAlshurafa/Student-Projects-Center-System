@@ -23,25 +23,37 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             await dbContext.Set<T>().AddAsync(model);
         }
 
-        public int Delete(int id)
+        public async Task<IEnumerable<T>> GetAll(int page_size = 6, int page_number = 1, string? includeProperty = null)
         {
-            var model = dbContext.Set<T>().Find(id);
-            if(model != null)
+            if (page_size <= 0)
             {
-                dbContext.Set<T>().Remove(model);
-                return 1;
+                page_size = 6;
+            }else if(page_size > 45)
+            {
+                page_size = 45;
             }
-            return 0;
-        }
 
-        public async Task<IEnumerable<T>> GetAll()
-        {
-            var models = await dbContext.Set<T>().ToListAsync();
+            if (page_number <= 0)
+            {
+                page_number = 1; 
+            }
+
+            IQueryable<T> query = dbContext.Set<T>();
+
+            if (!string.IsNullOrEmpty(includeProperty))
+            {
+                foreach(var property in includeProperty.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(property);
+                }
+            }
+
+            var models = await query
+                .Skip((page_number - 1) * page_size)
+                .Take(page_size)
+                .ToListAsync();
+
             return models;
-            //foreach (var model in models)
-            //{
-            //    yield return model;
-            //}
         }
 
         public async Task<T> GetById(int id)
@@ -53,6 +65,17 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         public void Update(T model)
         {
             dbContext.Set<T>().Update(model);
+        }
+
+        public int Delete(int id)
+        {
+            var model = dbContext.Set<T>().Find(id);
+            if (model != null)
+            {
+                dbContext.Set<T>().Remove(model);
+                return 1;
+            }
+            return 0;
         }
     }
 }

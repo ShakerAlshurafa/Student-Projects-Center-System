@@ -26,9 +26,9 @@ namespace StudentProjectCenterSystem
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
-            builder.Services.AddScoped(typeof(IProjectRepository), typeof(ProjectRepository));
-            builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             builder.Services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
+            builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            builder.Services.AddScoped(typeof(IProjectRepository), typeof(ProjectRepository));
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
