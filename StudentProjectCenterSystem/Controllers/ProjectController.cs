@@ -4,6 +4,7 @@ using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
+using System.Linq.Expressions;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
@@ -21,9 +22,16 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        //[ResponseCache(Duration = 30, Location = ResponseCacheLocation.Any)]
+        [ResponseCache(CacheProfileName = ("defaultCache"))]
+        public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? projectName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
-            var model = await unitOfWork.projectRepository.GetAll(PageSize, PageNumber);
+            Expression<Func<Project, bool>> filter = null;
+            if(!string.IsNullOrEmpty(projectName))
+            {
+                filter = x => x.Name.Contains(projectName);
+            }
+            var model = await unitOfWork.projectRepository.GetAll(filter, PageSize, PageNumber);
 
             if (!model.Any())
             {
@@ -61,14 +69,14 @@ namespace StudentProjectsCenterSystem.Controllers
 
             var model = mapper.Map<Project>(project);
             await unitOfWork.projectRepository.Create(model);
-            int success = await unitOfWork.save();
+            int successSave = await unitOfWork.save();
 
-            if (success == 0)
+            if (successSave == 0)
             {
                 return StatusCode(500, new ApiResponse(500, "Create Failed"));
             }
 
-            return CreatedAtAction(nameof(Create), new { id = success }, new ApiResponse(201, result: project));
+            return CreatedAtAction(nameof(Create), new { id = successSave }, new ApiResponse(201, result: project));
         }
 
         [HttpPut]
@@ -90,9 +98,9 @@ namespace StudentProjectsCenterSystem.Controllers
 
             mapper.Map(project, existingProject);
             unitOfWork.projectRepository.Update(existingProject);
-            int success = await unitOfWork.save();
+            int successSave = await unitOfWork.save();
 
-            if (success == 0)
+            if (successSave == 0)
             {
                 return StatusCode(500, new ApiResponse(500, "Update Failed"));
             }

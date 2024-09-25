@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.project;
 
 
 namespace StudentProjectsCenterSystem.Infrastructure.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<LocalUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
@@ -24,6 +25,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
         }
 
         public DbSet<Project> Projects { get; set; }
+        public DbSet<LocalUser> LocalUsers { get; set; }
 
     }
 }
