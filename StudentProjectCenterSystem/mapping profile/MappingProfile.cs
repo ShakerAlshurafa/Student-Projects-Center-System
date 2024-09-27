@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.project;
 
@@ -18,6 +19,8 @@ namespace StudentProjectsCenterSystem.mapping_profile
 
             CreateMap<ProjectDetails, ProjectDetailsCreateDTO>().ReverseMap();
             CreateMap<Project, ProjectUpdateDTO>().ReverseMap();
+
+            CreateMap<LocalUser, LocalUserDTO>().ReverseMap();
         }
             
     }

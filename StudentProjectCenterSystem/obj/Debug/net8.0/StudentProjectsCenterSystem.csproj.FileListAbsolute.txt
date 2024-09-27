@@ -150,3 +150,6 @@ D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Debug\net8.0\StudentProjectsCenterSystem.pdb
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Debug\net8.0\StudentProjectsCenterSystem.genruntimeconfig.cache
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Debug\net8.0\ref\StudentProjectsCenterSystem.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\StudentProjectsCenterSystem.Services.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\StudentProjectsCenterSystem.Services.pdb

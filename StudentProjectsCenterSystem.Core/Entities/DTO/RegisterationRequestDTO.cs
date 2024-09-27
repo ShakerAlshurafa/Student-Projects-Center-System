@@ -1,11 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace StudentProjectsCenterSystem.Core.Entities.DTO
 {
+    public enum UserRole
+    {
+        Student,
+        Customer
+    }
+
     public class RegisterationRequestDTO
     {
         public string FirstName { get; set; } = string.Empty;
@@ -14,6 +16,8 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string? CompanyName { get; set; } = string.Empty;
-        public List<string> Roles { get; set; } = new List<string>();
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public UserRole Role { get; set; } // Select between Customer or Student
     }
 }
