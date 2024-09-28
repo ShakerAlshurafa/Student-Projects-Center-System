@@ -47,6 +47,10 @@ namespace StudentProjectCenterSystem
 
             builder.Services.AddTransient<IEmailService, EmailService>();
 
+            builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+            {
+                options.TokenLifespan = TimeSpan.FromHours(1);
+            });
 
             var key = builder.Configuration.GetValue<string>("ApiSetting:SecretKey");
 
@@ -76,7 +80,8 @@ namespace StudentProjectCenterSystem
                 options.Password.RequiredUniqueChars = 3;
                 options.Password.RequireNonAlphanumeric = false;
             })
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
