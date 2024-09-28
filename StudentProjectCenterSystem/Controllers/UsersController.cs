@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.IRepositories;
@@ -17,9 +16,31 @@ namespace StudentProjectsCenterSystem.Controllers
             this.userRepository = userRepository;
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterationRequestDTO model)
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
         {
+            if (ModelState.IsValid)
+            {
+                var user = await userRepository.Login(model);
+                if (user.User == null)
+                {
+                    return Unauthorized(new ApiValidationResponse(new List<string>() { "Email or password inCorrect" }, 401));
+                }
+                return Ok(user);
+            }
+            return BadRequest(new ApiValidationResponse(new List<string>() { "Please try to enter the email and password correctly" }, 400));
+        }
+
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterationRequestDTO model)
+        {
+            if (model.Role == UserRole.Customer && string.IsNullOrEmpty(model.CompanyName))
+            {
+                return BadRequest("Company name is required for customers.");
+            }
+
             var response = await userRepository.Register(model);
 
             if (response is ApiValidationResponse validationResponse)
@@ -31,7 +52,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 return StatusCode(apiResponse.StatusCode ?? 500, apiResponse);
             }
 
-            return Ok(response.Result);
+            return Ok(response);
         }
 
     }

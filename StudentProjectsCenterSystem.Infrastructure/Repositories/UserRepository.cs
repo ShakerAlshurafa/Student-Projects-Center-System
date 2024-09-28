@@ -1,13 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using StudentProjectsCenterSystem.Services;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
@@ -16,12 +13,23 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         private readonly ApplicationDbContext dbContext;
         private readonly UserManager<LocalUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
+        private readonly SignInManager<LocalUser> signInManager;
+        private readonly IMapper mapper;
+        private readonly ITokenServices tokenServices;
 
-        public UserRepository(ApplicationDbContext dbContext, UserManager<LocalUser> userManager, RoleManager<IdentityRole> roleManager)
+        public UserRepository(ApplicationDbContext dbContext, 
+                              UserManager<LocalUser> userManager, 
+                              RoleManager<IdentityRole> roleManager, 
+                              SignInManager<LocalUser> signInManager,
+                              IMapper mapper,
+                              ITokenServices tokenServices)
         {
             this.dbContext = dbContext;
             this.userManager = userManager;
             this.roleManager = roleManager;
+            this.signInManager = signInManager;
+            this.mapper = mapper;
+            this.tokenServices = tokenServices;
         }
 
         public bool IsUniqueUser(string email)
@@ -29,9 +37,36 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             return dbContext.LocalUsers.FirstOrDefault(u => u.Email == email) == null;
         }
 
-        public Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
+        public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
         {
-            throw new NotImplementedException();
+            var user = await userManager.FindByEmailAsync(loginRequestDTO.Email);
+
+            if (user == null)
+            {
+                return new LoginResponseDTO
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Invalid email or password."
+                };
+            }
+
+            var checkPassword = await signInManager.CheckPasswordSignInAsync(user, loginRequestDTO.Password, false);
+            if (!checkPassword.Succeeded)
+            {
+                return new LoginResponseDTO()
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Invalid email or password."
+                };
+            }
+
+            var role = await userManager.GetRolesAsync(user);
+            return new LoginResponseDTO()
+            {
+                User = mapper.Map<LocalUserDTO>(user),
+                Token = await tokenServices.CreateTokenAsync(user),
+                Role = role.ToList(),
+            };
         }
 
         public async Task<ApiResponse> Register(RegisterationRequestDTO registerationRequestDTO)
@@ -59,17 +94,10 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                         return new ApiValidationResponse(errors, 400);
                     }
 
-                    // Validate the roles exist, if not return an error
-                    foreach (var role in registerationRequestDTO.Roles)
-                    {
-                        if (!await roleManager.RoleExistsAsync(role))
-                        {
-                            return new ApiValidationResponse(new List<string> { $"Role '{role}' does not exist." }, 400);
-                        }
-                    }
+                    string role = registerationRequestDTO.Role == UserRole.Customer ? "Customer" : "Student";
 
                     // Assign roles to the user
-                    var addRolesResult = await userManager.AddToRolesAsync(user, registerationRequestDTO.Roles);
+                    var addRolesResult = await userManager.AddToRoleAsync(user, role);
                     if (!addRolesResult.Succeeded)
                     {
                         var errors = addRolesResult.Errors.Select(e => e.Description);
@@ -80,7 +108,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                     await transaction.CommitAsync();
 
                     // Return success response
-                    return new ApiResponse(201, "User registered successfully", result:new LocalUserDTO { UserName = user.UserName, Email = user.Email });
+                    return new ApiResponse(201, "User registered successfully", result: new LocalUserDTO { UserName = user.UserName, Email = user.Email });
                 }
                 catch (Exception ex)
                 {
