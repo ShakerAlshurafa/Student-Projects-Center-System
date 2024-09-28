@@ -45,6 +45,9 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(IUserRepository), typeof(UserRepository));
             builder.Services.AddScoped(typeof(ITokenServices), typeof(TokenService));
 
+            builder.Services.AddTransient<IEmailService, EmailService>();
+
+
             var key = builder.Configuration.GetValue<string>("ApiSetting:SecretKey");
 
             builder.Services.AddAuthentication(options =>
