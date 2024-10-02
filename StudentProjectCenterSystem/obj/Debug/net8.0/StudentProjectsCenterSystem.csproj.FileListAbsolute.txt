@@ -153,3 +153,7 @@ D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\StudentProjectsCenterSystem.Services.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\StudentProjectsCenterSystem.Services.pdb
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\MailKit.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\MimeKit.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\bin\Debug\net8.0\System.Formats.Asn1.dll
