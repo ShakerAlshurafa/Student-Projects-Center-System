@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using StudentProjectsCenterSystem.Services;
+using System.Web;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
@@ -105,13 +106,16 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiResponse(400, "Invalid or missing token."));
             }
 
+            // Decode the token
+            string decodedToken = HttpUtility.UrlDecode(model.Token);
+
             var user = await userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
                 return NotFound(new ApiResponse(404, "User with the provided email not found."));
             }
 
-            var result = await userManager.ResetPasswordAsync(user, model.Token, model.newPassword);
+            var result = await userManager.ResetPasswordAsync(user, decodedToken, model.newPassword);
             if (result.Succeeded)
             {
                 return Ok(new ApiResponse(200, "Password reset successfully."));
