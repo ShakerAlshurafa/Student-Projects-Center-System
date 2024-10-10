@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +26,7 @@ namespace StudentProjectCenterSystem
             {
                 options.CacheProfiles.Add("defaultCache", new CacheProfile()
                 {
-                    Duration = 60,
+                    Duration = 30,
                     Location = ResponseCacheLocation.Any
                 });
             });
@@ -44,6 +43,8 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(IProjectRepository), typeof(ProjectRepository));
             builder.Services.AddScoped(typeof(IUserRepository), typeof(UserRepository));
             builder.Services.AddScoped(typeof(ITokenServices), typeof(TokenService));
+            builder.Services.AddScoped(typeof(IProjectDetailsSectionsRepository), typeof(ProjectDetailsSectionsRepository));
+            builder.Services.AddScoped(typeof(IProjectDetailsRepository), typeof(ProjectDetailsRepository));
 
             builder.Services.AddTransient<IEmailService, EmailService>();
 
@@ -67,7 +68,8 @@ namespace StudentProjectCenterSystem
                     ValidateIssuer = false,
                     ValidateAudience = false,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
+                    ValidateLifetime = true
                 };
             });
 

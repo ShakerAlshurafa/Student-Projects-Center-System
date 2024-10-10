@@ -1,12 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace StudentProjectsCenterSystem.Core.Entities.DTO
+namespace StudentProjectsCenterSystem.Core.Entities.DTO.Authentication
 {
-    public enum UserRole
-    {
-        Student,
-        Customer
-    }
 
     public class RegisterationRequestDTO
     {
@@ -17,7 +12,6 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO
         public string Password { get; set; } = string.Empty;
         public string? CompanyName { get; set; } = string.Empty;
 
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public UserRole Role { get; set; } // Select between Customer or Student
+        public string Role { get; set; } = string.Empty; // Select between Customer or Student
     }
 }

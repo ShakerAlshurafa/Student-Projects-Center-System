@@ -1,6 +1,10 @@
 ﻿using AutoMapper;
 using StudentProjectsCenterSystem.Core.Entities;
+using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
+using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
+using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetailsSection;
 using StudentProjectsCenterSystem.Core.Entities.project;
 
 namespace StudentProjectsCenterSystem.mapping_profile
@@ -9,19 +13,23 @@ namespace StudentProjectsCenterSystem.mapping_profile
     {
         public MappingProfile()
         {
-            CreateMap<Project, ProjectDTO>().ReverseMap();
             CreateMap<Project, ProjectDetailsDTO>().ReverseMap();
 
-            CreateMap<Project, ProjectCreateDTO>()
-                .ForMember(dest => dest.ProjectDetails, opt => opt.MapFrom(src => src.ProjectDetails))
-                .ReverseMap()
-                .ForMember(dest => dest.ProjectDetails, opt => opt.MapFrom(src => src.ProjectDetails));
+            // change => enter details from my project
+            //CreateMap<Project, ProjectCreateDTO>()
+            //    .ForMember(dest => dest.ProjectDetails, opt => opt.MapFrom(src => src.ProjectDetails))
+            //    .ReverseMap()
+            //    .ForMember(dest => dest.ProjectDetails, opt => opt.MapFrom(src => src.ProjectDetails));
 
-            CreateMap<ProjectDetails, ProjectDetailsCreateDTO>().ReverseMap();
+            CreateMap<ProjectDetailEntity, ProjectDetailsEditDTO>().ReverseMap();
             CreateMap<Project, ProjectUpdateDTO>().ReverseMap();
+            CreateMap<Project, MyProjectDTO>().ReverseMap();
+
+            CreateMap<ProjectDetailsSection, ProjectDetailsSectionDTO>().ReverseMap();
+            CreateMap<ProjectDetailsSection, ProjectDetailsSectionCreateDTO>().ReverseMap();
 
             CreateMap<LocalUser, LocalUserDTO>().ReverseMap();
         }
-            
+
     }
 }

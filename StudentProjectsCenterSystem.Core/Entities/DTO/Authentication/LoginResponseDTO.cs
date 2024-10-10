@@ -1,4 +1,4 @@
-﻿namespace StudentProjectsCenterSystem.Core.Entities.DTO
+﻿namespace StudentProjectsCenterSystem.Core.Entities.DTO.Authentication
 {
     public class LoginResponseDTO
     {

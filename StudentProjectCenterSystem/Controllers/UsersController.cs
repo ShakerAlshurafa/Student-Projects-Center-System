@@ -43,9 +43,13 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterationRequestDTO model)
         {
-            if (model.Role == UserRole.Customer && string.IsNullOrEmpty(model.CompanyName))
+            if (model.Role.ToLower() != "customer" && model.Role.ToLower() != "student")
             {
-                return BadRequest("Company name is required for customers.");
+                return BadRequest(new ApiResponse(400,"Invalid role. The role must be either 'customer' or 'student'."));
+            }
+            if (model.Role.ToLower() == "customer" && string.IsNullOrEmpty(model.CompanyName))
+            {
+                return BadRequest(new ApiResponse(400, "Company name is required for customers."));
             }
 
             var response = await userRepository.Register(model);

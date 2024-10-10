@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Identity;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
-using StudentProjectsCenterSystem.Services;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
@@ -17,9 +17,9 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         private readonly IMapper mapper;
         private readonly ITokenServices tokenServices;
 
-        public UserRepository(ApplicationDbContext dbContext, 
-                              UserManager<LocalUser> userManager, 
-                              RoleManager<IdentityRole> roleManager, 
+        public UserRepository(ApplicationDbContext dbContext,
+                              UserManager<LocalUser> userManager,
+                              RoleManager<IdentityRole> roleManager,
                               SignInManager<LocalUser> signInManager,
                               IMapper mapper,
                               ITokenServices tokenServices)
@@ -39,8 +39,10 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 
         public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
         {
+            // Find user by email
             var user = await userManager.FindByEmailAsync(loginRequestDTO.Email);
 
+            // Check if user exists
             if (user == null)
             {
                 return new LoginResponseDTO
@@ -50,24 +52,30 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 };
             }
 
+            // Check if password is correct
             var checkPassword = await signInManager.CheckPasswordSignInAsync(user, loginRequestDTO.Password, false);
             if (!checkPassword.Succeeded)
             {
-                return new LoginResponseDTO()
+                return new LoginResponseDTO
                 {
                     IsSuccess = false,
                     ErrorMessage = "Invalid email or password."
                 };
             }
 
-            var role = await userManager.GetRolesAsync(user);
-            return new LoginResponseDTO()
+            // Retrieve user roles
+            var roles = await userManager.GetRolesAsync(user);
+
+            // Return success response with user data, token, and roles
+            return new LoginResponseDTO
             {
+                IsSuccess = true,
                 User = mapper.Map<LocalUserDTO>(user),
                 Token = await tokenServices.CreateTokenAsync(user),
-                Role = role.ToList(),
+                Role = roles.ToList(),
             };
         }
+
 
         public async Task<ApiResponse> Register(RegisterationRequestDTO registerationRequestDTO)
         {
@@ -82,6 +90,11 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 CompanyName = registerationRequestDTO.CompanyName ?? ""
             };
 
+            if(registerationRequestDTO.Role.ToLower() == "admin")
+            {
+                user.UserName = "Dr." + user.UserName;
+            }
+
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -94,7 +107,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                         return new ApiValidationResponse(errors, 400);
                     }
 
-                    string role = registerationRequestDTO.Role == UserRole.Customer ? "Customer" : "Student";
+
+                    string role = registerationRequestDTO.Role.ToLower();
 
                     // Assign roles to the user
                     var addRolesResult = await userManager.AddToRoleAsync(user, role);

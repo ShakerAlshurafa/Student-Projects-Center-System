@@ -1,12 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
@@ -24,7 +20,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             await dbContext.Set<T>().AddAsync(model);
         }
 
-        public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> filter = null, int page_size = 6, int page_number = 1, string? includeProperty = null)
+        public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>>? filter = null, int page_size = 6, int page_number = 1, string? includeProperty = null)
         {
             if (page_size <= 0)
             {
@@ -83,5 +79,16 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             }
             return 0;
         }
+
+        public async Task<bool> IsExist(int id)
+        {
+            var model = await dbContext.Set<T>().FindAsync(id);
+            if (model != null)
+            {
+                return true;
+            }
+            return false;
+        }
+
     }
 }

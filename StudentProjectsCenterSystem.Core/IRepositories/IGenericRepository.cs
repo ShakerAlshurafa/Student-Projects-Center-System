@@ -9,5 +9,6 @@ namespace StudentProjectsCenterSystem.Core.IRepositories
         public Task Create(T model);
         public void Update(T model);
         public int Delete(int id);
+        public Task<bool> IsExist(int id);
     }
 }

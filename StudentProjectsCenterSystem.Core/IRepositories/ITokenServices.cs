@@ -1,4 +1,5 @@
 ﻿using StudentProjectsCenterSystem.Core.Entities;
+using StudentProjectsCenterSystem.Core.Entities.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;

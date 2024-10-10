@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using StudentProjectsCenterSystem.Core.Entities.project;
+using System.Reflection.Emit;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Configurations
 {
@@ -9,10 +10,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Configurations
         public void Configure(EntityTypeBuilder<Project> builder)
         {
             builder
-                .HasMany(p => p.ProjectDetails)
+                .HasMany(p => p.ProjectDetailsSection)
                 .WithOne(pd => pd.Project)
                 .HasForeignKey(pd => pd.ProjectId);
 
+            builder
+                .HasOne(p => p.Workgroup)
+                .WithOne(w => w.Project)
+                .HasForeignKey<Project>(p => p.WorkgroupId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
