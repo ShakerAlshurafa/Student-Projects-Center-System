@@ -58,11 +58,23 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             return models;
         }
 
-        public async Task<T> GetById(int id)
+        public async Task<T?> GetById(int id, string? includeProperty = null)
         {
-            var model = await dbContext.Set<T>().FindAsync(id);
-            return model;
+            IQueryable<T> query = dbContext.Set<T>();
+
+            // Include related properties if provided
+            if (!string.IsNullOrEmpty(includeProperty))
+            {
+                foreach (var property in includeProperty.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(property);
+                }
+            }
+
+            // Find the entity by ID
+            return await query.FirstOrDefaultAsync(entity => EF.Property<int>(entity, "Id") == id);
         }
+
 
         public void Update(T model)
         {
