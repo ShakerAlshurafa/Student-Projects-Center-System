@@ -33,7 +33,7 @@ namespace StudentProjectsCenterSystem.Services
             // Define the claims you want to add in the token
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, localUser.FirstName),
+                new Claim(ClaimTypes.Email, localUser?.Email ?? ""),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -44,8 +44,8 @@ namespace StudentProjectsCenterSystem.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(3), // Token expiration time
-                SigningCredentials = creds
+                Expires = DateTime.UtcNow.AddDays(7), // Token expiration time
+                SigningCredentials = creds,
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

@@ -1,5 +1,6 @@
 ﻿using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.DTO;
+using StudentProjectsCenterSystem.Core.Entities.Domain;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
 
 namespace StudentProjectsCenterSystem.Core.IRepositories
 {

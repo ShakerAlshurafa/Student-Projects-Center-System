@@ -8,12 +8,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         private readonly ApplicationDbContext dbContext;
 
         public IProjectRepository projectRepository { get; set; }
-
+        public IProjectDetailsSectionsRepository detailsSectionsRepository { get; set; }
+        public IProjectDetailsRepository projectDetailsRepository { get; set; }
 
         public UnitOfWork(ApplicationDbContext dbContext)
         {
             this.dbContext = dbContext;
             projectRepository = new ProjectRepository(dbContext);
+            detailsSectionsRepository = new ProjectDetailsSectionsRepository(dbContext);
+            projectDetailsRepository = new ProjectDetailsRepository(dbContext);
         }
 
         public async Task<int> save() => await dbContext.SaveChangesAsync();

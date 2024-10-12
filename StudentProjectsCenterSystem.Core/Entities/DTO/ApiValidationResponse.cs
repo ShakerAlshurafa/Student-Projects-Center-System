@@ -1,4 +1,6 @@
-﻿namespace StudentProjectsCenterSystem.Core.Entities.DTO
+﻿using StudentProjectsCenterSystem.Core.Entities.Domain;
+
+namespace StudentProjectsCenterSystem.Core.Entities.DTO
 {
     public class ApiValidationResponse : ApiResponse
     {

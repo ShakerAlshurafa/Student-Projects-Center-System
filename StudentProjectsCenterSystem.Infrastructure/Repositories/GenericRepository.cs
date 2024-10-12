@@ -1,12 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
@@ -24,7 +20,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             await dbContext.Set<T>().AddAsync(model);
         }
 
-        public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>> filter = null, int page_size = 6, int page_number = 1, string? includeProperty = null)
+        public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>>? filter = null, int page_size = 6, int page_number = 1, string? includeProperty = null)
         {
             if (page_size <= 0)
             {
@@ -62,11 +58,23 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             return models;
         }
 
-        public async Task<T> GetById(int id)
+        public async Task<T?> GetById(int id, string? includeProperty = null)
         {
-            var model = await dbContext.Set<T>().FindAsync(id);
-            return model;
+            IQueryable<T> query = dbContext.Set<T>();
+
+            // Include related properties if provided
+            if (!string.IsNullOrEmpty(includeProperty))
+            {
+                foreach (var property in includeProperty.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(property);
+                }
+            }
+
+            // Find the entity by ID
+            return await query.FirstOrDefaultAsync(entity => EF.Property<int>(entity, "Id") == id);
         }
+
 
         public void Update(T model)
         {
@@ -83,5 +91,16 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             }
             return 0;
         }
+
+        public async Task<bool> IsExist(int id)
+        {
+            var model = await dbContext.Set<T>().FindAsync(id);
+            if (model != null)
+            {
+                return true;
+            }
+            return false;
+        }
+
     }
 }
