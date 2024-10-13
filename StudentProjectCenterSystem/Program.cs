@@ -100,7 +100,21 @@ namespace StudentProjectCenterSystem
                 };
             });
 
+            // Add CORS service with global policy
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()    // Allow requests from any origin
+                          .AllowAnyHeader()    // Allow any header
+                          .AllowAnyMethod();   // Allow any HTTP method (GET, POST, etc.)
+                });
+            });
+
             var app = builder.Build();
+
+            // Use the CORS policy globally
+            app.UseCors("AllowAll");
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
