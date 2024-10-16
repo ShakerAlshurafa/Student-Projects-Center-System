@@ -8,7 +8,7 @@ using System.Web;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/users")]
     [ApiController]
     public class UsersController : ControllerBase
     {
@@ -67,7 +67,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpPost("SendEmail")]
+        [HttpPost("auth/request-password-reset")]
         public async Task<IActionResult> SendEmailForUser(string email)
         {
             var user = await userManager.FindByEmailAsync(email);
@@ -92,7 +92,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "Password reset link has been sent. Please check your email."));
         }
 
-        [HttpPost("ResetPassword")]
+        [HttpPost("password-reset")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
         {
             if (!ModelState.IsValid)

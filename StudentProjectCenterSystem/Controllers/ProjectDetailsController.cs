@@ -11,7 +11,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/project-details")]
     [ApiController]
     public class ProjectDetailsController : ControllerBase
     {

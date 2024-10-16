@@ -15,7 +15,7 @@ using System.Linq.Expressions;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/projects")]
     [ApiController]
     public class ProjectsController : ControllerBase
     {
@@ -31,7 +31,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("GetAll")]
+        [HttpGet]
         [ResponseCache(CacheProfileName = ("defaultCache"))]
         public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? projectName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
@@ -70,7 +70,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("GetAllMyProject")]
+        [HttpGet("mine")]
         //[ResponseCache(CacheProfileName = ("defaultCache"))]
         public async Task<ActionResult<ApiResponse>> GetAllMyProject([FromQuery] string? projectName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
@@ -108,7 +108,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         // To return project with details
-        [HttpGet("{id}")]
+        [HttpGet("details/{id}")]
         public async Task<ActionResult<ApiResponse>> GetById(int id)
         {
             var model = await unitOfWork.projectRepository.GetByIdWithDetails(id);
@@ -248,7 +248,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpPost("AddStudentsToProject")]
+        [HttpPost("students")]
         public async Task<ActionResult<ApiResponse>> AddStudent([Required] int projectId, [Required] CreateStudentDTO students)
         {
             if (students.usersId == null || !students.usersId.Any())
@@ -291,7 +291,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpDelete("DeleteStudentFromProject")]
+        [HttpDelete("students")]
         public async Task<ActionResult<ApiResponse>> DeleteStudent(
             [FromQuery, Required] int projectId,
             [FromQuery, Required] string studentId)
