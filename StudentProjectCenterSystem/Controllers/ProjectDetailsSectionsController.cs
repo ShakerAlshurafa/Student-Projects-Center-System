@@ -11,7 +11,7 @@ using System.Linq.Expressions;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/project-sections")]
     [ApiController]
     public class ProjectDetailsSectionsController : ControllerBase
     {
@@ -25,7 +25,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("GetAllSectionName")]
+        [HttpGet]
         [ResponseCache(CacheProfileName = ("defaultCache"))]
         public async Task<ActionResult<ApiResponse>> GetAllSection([FromQuery] string? sectionName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
@@ -38,12 +38,12 @@ namespace StudentProjectsCenterSystem.Controllers
 
             if (!model.Any())
             {
-                return new ApiResponse(404, "No Section Name Found");
+                return new ApiResponse(404, "No Section Found");
             }
 
-            var sectionNames = mapper.Map<List<ProjectDetailsSectionDTO>>(model);
+            var sectionDtos = mapper.Map<List<ProjectDetailsSectionDTO>>(model);
 
-            return new ApiResponse(200, "Section Names retrieved successfully", sectionNames);
+            return new ApiResponse(200, "Sections retrieved successfully", sectionDtos);
         }
 
 
