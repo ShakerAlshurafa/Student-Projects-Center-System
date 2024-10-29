@@ -16,3 +16,5 @@ D:\Graduation Project\StudentProjectCenterSystem\StudentProjectsCenterSystem.Inf
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectsCenterSystem.Infrastructure\obj\Release\net8.0\StudentProjectsCenterSystem.Infrastructure.pdb
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectsCenterSystem.Infrastructure\obj\Release\net8.0\StudentProjectsCenterSystem.Infrastructure.genruntimeconfig.cache
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectsCenterSystem.Infrastructure\obj\Release\net8.0\ref\StudentProjectsCenterSystem.Infrastructure.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectsCenterSystem.Infrastructure\bin\Release\net8.0\StudentProjectsCenterSystem.Services.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectsCenterSystem.Infrastructure\bin\Release\net8.0\StudentProjectsCenterSystem.Services.pdb

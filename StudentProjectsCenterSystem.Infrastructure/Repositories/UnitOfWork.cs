@@ -10,6 +10,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         public IProjectRepository projectRepository { get; set; }
         public IProjectDetailsSectionsRepository detailsSectionsRepository { get; set; }
         public IProjectDetailsRepository projectDetailsRepository { get; set; }
+        public IUserRepository userRepository { get; set; }
 
         public UnitOfWork(ApplicationDbContext dbContext)
         {
@@ -17,6 +18,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             projectRepository = new ProjectRepository(dbContext);
             detailsSectionsRepository = new ProjectDetailsSectionsRepository(dbContext);
             projectDetailsRepository = new ProjectDetailsRepository(dbContext);
+            userRepository = new UserRepository(dbContext);
         }
 
         public async Task<int> save() => await dbContext.SaveChangesAsync();

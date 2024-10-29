@@ -34,6 +34,7 @@ namespace StudentProjectsCenterSystem.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Email, localUser?.Email ?? ""),
+                new Claim(ClaimTypes.Name, localUser?.UserName ?? ""),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

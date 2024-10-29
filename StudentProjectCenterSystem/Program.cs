@@ -41,6 +41,7 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             builder.Services.AddScoped(typeof(IProjectRepository), typeof(ProjectRepository));
+            builder.Services.AddScoped(typeof(IAuthRepository), typeof(AuthRepository));
             builder.Services.AddScoped(typeof(IUserRepository), typeof(UserRepository));
             builder.Services.AddScoped(typeof(ITokenServices), typeof(TokenService));
             builder.Services.AddScoped(typeof(IProjectDetailsSectionsRepository), typeof(ProjectDetailsSectionsRepository));

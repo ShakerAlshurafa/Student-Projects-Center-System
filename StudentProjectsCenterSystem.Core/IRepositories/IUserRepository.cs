@@ -1,14 +1,8 @@
 ﻿using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.Domain;
-using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
 
 namespace StudentProjectsCenterSystem.Core.IRepositories
 {
-    public interface IUserRepository
+    public interface IUserRepository : IGenericRepository<LocalUser>
     {
-        Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO);
-        Task<ApiResponse> Register(RegisterationRequestDTO registerationRequestDTO);
-
-        bool IsUniqueUser(string Email);
     }
 }

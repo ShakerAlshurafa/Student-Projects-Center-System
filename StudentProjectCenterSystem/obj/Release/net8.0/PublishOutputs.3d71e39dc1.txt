@@ -8,7 +8,10 @@ D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Azure.Core.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Azure.Identity.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\BouncyCastle.Cryptography.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Castle.Core.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\MailKit.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Microsoft.AspNetCore.Cryptography.Internal.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Microsoft.AspNetCore.Cryptography.KeyDerivation.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
@@ -33,11 +36,13 @@ D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Microsoft.OpenApi.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Microsoft.SqlServer.Server.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Microsoft.Win32.SystemEvents.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\MimeKit.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.Swagger.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.SwaggerGen.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.SwaggerUI.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\System.Configuration.ConfigurationManager.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\System.Drawing.Common.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\System.Formats.Asn1.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\System.IdentityModel.Tokens.Jwt.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\System.Memory.Data.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\System.Runtime.Caching.dll
@@ -59,6 +64,8 @@ D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\StudentProjectsCenterSystem.Core.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\StudentProjectsCenterSystem.Infrastructure.dll
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\StudentProjectsCenterSystem.Services.dll
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\StudentProjectsCenterSystem.Infrastructure.pdb
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\StudentProjectsCenterSystem.Core.pdb
+D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\StudentProjectsCenterSystem.Services.pdb
 D:\Graduation Project\StudentProjectCenterSystem\StudentProjectCenterSystem\obj\Release\net8.0\PubTmp\Out\StudentProjectsCenterSystem.deps.json
