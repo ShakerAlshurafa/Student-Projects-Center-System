@@ -23,6 +23,8 @@ namespace StudentProjectsCenterSystem.Controllers
             this.mapper = mapper;
         }
 
+        // test
+
         [HttpGet("get-users")]
         public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? userName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
