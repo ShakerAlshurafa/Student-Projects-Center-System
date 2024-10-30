@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
@@ -16,11 +17,13 @@ namespace StudentProjectsCenterSystem.Controllers
     {
         private readonly IUnitOfWork<LocalUser> unitOfWork;
         private readonly IMapper mapper;
+        private readonly UserManager<LocalUser> userManager;
 
-        public UsersController(IUnitOfWork<LocalUser> unitOfWork, IMapper mapper)
+        public UsersController(IUnitOfWork<LocalUser> unitOfWork, IMapper mapper, UserManager<LocalUser> userManager)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
+            this.userManager = userManager;
         }
 
 
@@ -32,18 +35,26 @@ namespace StudentProjectsCenterSystem.Controllers
             {
                 filter = x => x.UserName.Contains(userName);
             }
-            
-            var model = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber, "UserProjects");
 
-            var users = model.Select(u => new UserDTO
+            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber);
+
+            var userDTOs = new List<UserDTO>();
+
+            foreach (var user in usersList)
             {
-                Id = u.Id,
-                UserName = u.UserName ?? "",
-                Role = u.UserProjects.Single().Role,
-            });
+                var roles = await userManager.GetRolesAsync(user);
+                userDTOs.Add(new UserDTO
+                {
+                    Id = user.Id,
+                    UserName = user.UserName ?? "",
+                    Role = roles.FirstOrDefault() ?? "No Role"
+                });
+            }
 
-            return new ApiResponse(200, "Users retrieved successfully", users);
+            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
+
+
 
     }
 }

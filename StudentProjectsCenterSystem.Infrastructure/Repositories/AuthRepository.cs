@@ -90,11 +90,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 CompanyName = registerationRequestDTO.CompanyName ?? ""
             };
 
-            if(registerationRequestDTO.Role.ToLower() == "admin")
-            {
-                user.UserName = "Dr." + user.UserName;
-            }
-
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -107,11 +102,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                         return new ApiValidationResponse(errors, 400);
                     }
 
-
-                    string role = registerationRequestDTO.Role.ToLower();
-
                     // Assign roles to the user
-                    var addRolesResult = await userManager.AddToRoleAsync(user, role);
+                    var addRolesResult = await userManager.AddToRoleAsync(user, "user");
                     if (!addRolesResult.Succeeded)
                     {
                         var errors = addRolesResult.Errors.Select(e => e.Description);
