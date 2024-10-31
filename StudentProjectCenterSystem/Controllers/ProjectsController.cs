@@ -264,7 +264,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             // Validate the new status
             var validStatuses = new List<string> { "Active", "Completed", "Pending"};
-            if (!validStatuses.Contains(status))
+            if (string.IsNullOrWhiteSpace(status) || !validStatuses.Contains(char.ToUpper(status[0]) + status.Substring(1).ToLower()))
             {
                 return BadRequest(new ApiResponse(400, $"Invalid status. Allowed values: {string.Join(", ", validStatuses)}"));
             }
