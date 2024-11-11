@@ -233,23 +233,56 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<ApiResponse>> Delete([Required] int id)
+        //[HttpDelete("{id}")]
+        //public async Task<ActionResult<ApiResponse>> Delete([Required] int id)
+        //{
+        //    int successDelete = unitOfWork.projectRepository.Delete(id);
+        //    if (successDelete == 0)
+        //    {
+        //        return NotFound(new ApiResponse(404));
+        //    }
+
+        //    int successSave = await unitOfWork.save();
+        //    if (successSave == 0)
+        //    {
+        //        return StatusCode(500, new ApiResponse(500, "Deleted failed!"));
+        //    }
+
+        //    return Ok(new ApiResponse(200, "Deleted Successfully"));
+        //}
+
+
+        [HttpPut("{projectId}/status")]
+        public async Task<ActionResult<ApiResponse>> UpdateProjectStatus(int projectId, [FromBody, Required] string status)
         {
-            int successDelete = unitOfWork.projectRepository.Delete(id);
-            if (successDelete == 0)
+            // Check if project exists
+            var project = await unitOfWork.projectRepository.GetById(projectId);
+            if (project == null)
             {
-                return NotFound(new ApiResponse(404));
+                return NotFound(new ApiResponse(404, "Project not found."));
             }
 
-            int successSave = await unitOfWork.save();
-            if (successSave == 0)
+            // Validate the new status
+            var validStatuses = new List<string> { "Active", "Completed", "Pending" };
+            if (string.IsNullOrWhiteSpace(status) || !validStatuses.Contains(char.ToUpper(status[0]) + status.Substring(1).ToLower()))
             {
-                return StatusCode(500, new ApiResponse(500, "Deleted failed!"));
+                return BadRequest(new ApiResponse(400, $"Invalid status. Allowed values: {string.Join(", ", validStatuses)}"));
             }
 
-            return Ok(new ApiResponse(200, "Deleted Successfully"));
+            // Update the project status
+            project.Status = status;
+
+            // Save changes to database
+            unitOfWork.projectRepository.Update(project);
+            var result = await unitOfWork.save();
+            if (result <= 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Failed to update project status."));
+            }
+
+            return Ok(new ApiResponse(200, $"Project status updated to '{status}'."));
         }
+
 
 
         [HttpPost("students")]
@@ -276,7 +309,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 }
             }
 
-            foreach(var userId in students.usersId)
+            foreach (var userId in students.usersId)
             {
                 existingProject.UserProjects.Add(new UserProject { UserId = userId, Role = "Student" });
             }
@@ -341,7 +374,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpPost("co-supervisor")]
         public async Task<ActionResult<ApiResponse>> AddCoSupervisor([Required] int projectId, [Required] CreateCoSupervisorDTO supervisor)
         {
-            
+
             var existingProject = await unitOfWork.projectRepository.GetById(projectId);
             if (existingProject == null)
             {
