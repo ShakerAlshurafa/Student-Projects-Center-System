@@ -27,7 +27,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [HttpGet]
         [ResponseCache(CacheProfileName = ("defaultCache"))]
-        public async Task<ActionResult<ApiResponse>> GetAllSection(int projectId)
+        public async Task<ActionResult<ApiResponse>> GetAllSection([FromQuery,Required]int projectId)
         {
             //var checkProjectId = await unitOfWork.projectRepository.IsExistAsync(projectId);
 
@@ -55,6 +55,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiValidationResponse(errors));
             }
 
+            // add check if section exist
             var model = mapper.Map<ProjectDetailsSection>(section);
             model.ProjectId = projectId;
             await unitOfWork.detailsSectionsRepository.Create(model);
@@ -65,7 +66,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 return StatusCode(500, new ApiResponse(500, "Create Failed"));
             }
 
-            return CreatedAtAction(nameof(Create), new { id = model.Id }, new ApiResponse(201, result: model));
+            return CreatedAtAction(nameof(Create), new { id = model.Id }, new ApiResponse(201, result: model.Name));
         }
 
 
