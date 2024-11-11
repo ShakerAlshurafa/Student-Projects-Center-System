@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using System.ComponentModel.DataAnnotations;
+using StudentProjectsCenterSystem.Infrastructure.Repositories;
 using System.Linq.Expressions;
 
 namespace StudentProjectsCenterSystem.Controllers
@@ -16,15 +18,12 @@ namespace StudentProjectsCenterSystem.Controllers
         private readonly IUnitOfWork<LocalUser> unitOfWork;
         private readonly IMapper mapper;
         private readonly UserManager<LocalUser> userManager;
-        private readonly RoleManager<IdentityRole> roleManager;
 
-        public UsersController(IUnitOfWork<LocalUser> unitOfWork, IMapper mapper,
-                                UserManager<LocalUser> userManager, RoleManager<IdentityRole> roleManager)
+        public UsersController(IUnitOfWork<LocalUser> unitOfWork, IMapper mapper, UserManager<LocalUser> userManager)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
             this.userManager = userManager;
-            this.roleManager = roleManager;
         }
 
 
@@ -54,50 +53,6 @@ namespace StudentProjectsCenterSystem.Controllers
 
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
-
-
-        [HttpPut("change-role")]
-        public async Task<ActionResult<ApiResponse>> ChangeRole([FromQuery,Required] string userId, [FromBody,Required] string newRole)
-        {
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(newRole))
-            {
-                return BadRequest(new ApiResponse(400, "User ID and new role are required."));
-            }
-
-            // Find the user by ID
-            var user = await userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                return NotFound(new ApiResponse(404, "User not found."));
-            }
-
-            // Check if the role exists
-            var roleExists = await roleManager.RoleExistsAsync(newRole);
-            if (!roleExists)
-            {
-                return BadRequest(new ApiResponse(400, $"The role '{newRole}' does not exist."));
-            }
-
-            // Get the current roles of the user
-            var currentRoles = await userManager.GetRolesAsync(user);
-
-            // Remove current roles
-            var removeRolesResult = await userManager.RemoveFromRolesAsync(user, currentRoles);
-            if (!removeRolesResult.Succeeded)
-            {
-                return StatusCode(500, new ApiResponse(500, "Failed to remove current roles."));
-            }
-
-            // Add the new role
-            var addRoleResult = await userManager.AddToRoleAsync(user, newRole);
-            if (!addRoleResult.Succeeded)
-            {
-                return StatusCode(500, new ApiResponse(500, "Failed to add new role."));
-            }
-
-            return Ok(new ApiResponse(200, $"Role changed successfully to '{newRole}' for user '{user.UserName}'."));
-        }
-
 
 
 

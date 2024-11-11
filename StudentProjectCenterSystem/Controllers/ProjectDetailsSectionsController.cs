@@ -27,14 +27,11 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [HttpGet]
         [ResponseCache(CacheProfileName = ("defaultCache"))]
-        public async Task<ActionResult<ApiResponse>> GetAllSection([FromQuery] string? sectionName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        public async Task<ActionResult<ApiResponse>> GetAllSection(int projectId)
         {
-            Expression<Func<ProjectDetailsSection, bool>>? filter = null;
-            if (!string.IsNullOrEmpty(sectionName))
-            {
-                filter = x => x.Name.Contains(sectionName);
-            }
-            var model = await unitOfWork.detailsSectionsRepository.GetAll(filter, PageSize, PageNumber);
+            //var checkProjectId = await unitOfWork.projectRepository.IsExistAsync(projectId);
+
+            var model = await unitOfWork.detailsSectionsRepository.GetAllByProjecId(projectId);
 
             if (!model.Any())
             {

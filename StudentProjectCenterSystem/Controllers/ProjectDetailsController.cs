@@ -26,7 +26,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> Create([FromQuery,Required] int sectionId, [FromBody] ProjectDetailsCreateDTO[] projectDetailsDto)
+        public async Task<ActionResult<ApiResponse>> Create([FromQuery, Required] int sectionId, [FromBody] ProjectDetailsCreateDTO[] projectDetailsDto)
         {
             // Validate the model state
             if (!ModelState.IsValid)
