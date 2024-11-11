@@ -26,7 +26,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> Create([FromQuery,Required] int sectionId, [FromBody] ProjectDetailsCreateDTO[] projectDetailsDto)
+        public async Task<ActionResult<ApiResponse>> Create([FromBody] ProjectDetailsCreateDTO details)
         {
             // Validate the model state
             if (!ModelState.IsValid)
@@ -38,38 +38,44 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             // Check if the sction exists
-            if (!await unitOfWork.detailsSectionsRepository.IsExist(sectionId))
+            if (!await unitOfWork.detailsSectionsRepository.IsExist(details.SectionId))
             {
                 return NotFound(new ApiResponse(404, "Section not found."));
             }
 
-            var section = await unitOfWork.detailsSectionsRepository.GetById(sectionId);
-            var createdDetails = new List<ProjectDetailEntity>();
-
-            foreach (var detail in projectDetailsDto)
+            // Check if Title is null or empty
+            if (string.IsNullOrEmpty(details.Title))
             {
-                // Create a new ProjectDetails entity
-                var model = new ProjectDetailEntity
-                {
-                    Title = detail.Title,
-                    Description = detail.Description,
-                    IconData = detail.IconData ?? Array.Empty<byte>(),
-                    ProjectDetailsSection = section
-                };
-
-                await unitOfWork.projectDetailsRepository.Create(model);
-                createdDetails.Add(model);
+                return BadRequest(new ApiResponse(400, "Title is required."));
             }
 
-            // Save all changes at once
+            // Check if Description is null or empty
+            if (string.IsNullOrEmpty(details.Description))
+            {
+                return BadRequest(new ApiResponse(400, "Description is required."));
+            }
+
+            // Create new ProjectDetails entity
+            var model = new ProjectDetailEntity
+            {
+                Title = details.Title,
+                Description = details.Description,
+                IconData = details.IconData ?? Array.Empty<byte>(),
+                //ProjectDetailsSectionId = details.SectionId,
+                ProjectDetailsSection = await unitOfWork.detailsSectionsRepository.GetById(details.SectionId)
+            };
+
+            // Add and save the new entity
+            await unitOfWork.projectDetailsRepository.Create(model);
             if (await unitOfWork.save() == 0)
             {
                 return StatusCode(500, new ApiResponse(500, "Create operation failed."));
             }
 
             // Return success response with 201 Created status
-            return CreatedAtAction(nameof(Create), new ApiResponse(201, "Details created successfully", createdDetails));
+            return CreatedAtAction(nameof(Create), new { id = model.Id }, new ApiResponse(201, result: model));
         }
+
 
 
         [HttpPut("{id}")]

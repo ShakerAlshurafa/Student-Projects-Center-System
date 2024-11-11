@@ -20,6 +20,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             this.dbContext = dbContext;
         }
 
+        public async Task<List<ProjectDetailsSection>> GetAllByProjecId(int projectId)
+        {
+            var sections = await dbContext.ProjectDetailsSections
+                            .Include(p => p.Project)
+                            .Where(p => p.ProjectId == projectId)
+                            .ToListAsync();
+            return sections;
+        }
+
         public async Task<int> GetSectionId(string name)
         {
             // Retrieves the Id of the section by name, returns 0 if no section is found.
