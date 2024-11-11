@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
+using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
@@ -31,24 +32,52 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 
         public async Task<ProjectDetailsDTO> GetByIdWithDetails(int id)
         {
-            var model = await dbContext.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            var project = await dbContext.Projects
+                .Include(p => p.UserProjects)
+                .ThenInclude(up => up.User)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             var details = await dbContext.ProjectDetails
-               .Where(d => d.ProjectDetailsSection != null && d.ProjectDetailsSection.ProjectId == id)
-               .ToListAsync();
+                .Include(p => p.ProjectDetailsSection)
+                .Where(d => d.ProjectDetailsSection != null && d.ProjectDetailsSection.ProjectId == id)
+                .ToListAsync();
 
             var viewModel = new ProjectDetailsDTO
             {
-                Id = id,
-                Name = model?.Name ?? "",
-                Overview = model?.Overview ?? "",
-                Status = model?.Status ?? "",
-                ProjectDetails = details,
-                StartDate = model?.StartDate ?? new DateTime(),
-                EndDate = model?.EndDate ?? new DateTime()
+                Id = project.Id,
+                Name = project?.Name ?? "",
+                Overview = project?.Overview ?? "",
+                Status = project?.Status ?? "",
+                ProjectDetails = details.Select(d => new ProjectDetailEntityDTO
+                {
+                    detail = d,
+                    SectionName = d?.ProjectDetailsSection?.Name ?? ""
+                }),
+
+                SupervisorName = project?.UserProjects?.FirstOrDefault(up => up.Role == "Supervisor")?.User?.FirstName
+                                + " " + project?.UserProjects?.FirstOrDefault(up => up.Role == "Supervisor")?.User?.LastName
+                                ?? "No Supervisor Assigned",
+                CoSupervisorName = project?.UserProjects?.FirstOrDefault(up => up.Role == "Co-Supervisor")?.User?.FirstName
+                                + " " + project?.UserProjects?.FirstOrDefault(up => up.Role == "Co-Supervisor")?.User?.LastName
+                                ?? "No Co-Supervisor Assigned",
+                CustomerName = project?.UserProjects?.FirstOrDefault(up => up.Role == "Customer")?.User?.FirstName
+                                + " " + project?.UserProjects?.FirstOrDefault(up => up.Role == "Customer")?.User?.LastName
+                                ?? "No Customer Assigned",
+                Company = project?.UserProjects?.FirstOrDefault(up => up.Role == "Customer")?.User?.CompanyName
+                                ?? "No Customer Assigned",
+                Team = project?.UserProjects?.Where(up => up.Role == "Student")?
+                                .Select(up => up?.User?.FirstName + " " + up?.User?.LastName)
+                                .ToList()
+                                ?? new List<string>(),
+                Favorite = project?.Favorite ?? false,
+
+                StartDate = project?.StartDate ?? new DateTime(),
+                EndDate = project?.EndDate ?? new DateTime()
             };
 
             return viewModel;
         }
+
 
     }
 }

@@ -11,8 +11,9 @@ namespace StudentProjectsCenterSystem.Core.Entities.project
         public string? Status { get; set; } = "Active"; // Active, Pending, Completed 
         public DateTime StartDate { get; set; } = DateTime.Now;
         public DateTime? EndDate { get; set; } = null;
+        public bool Favorite = false;
 
-        
+
         public ICollection<ProjectDetailsSection>? ProjectDetailsSection { get; set; } = new List<ProjectDetailsSection>();
 
         // Many-to-Many Relationship
