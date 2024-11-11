@@ -68,6 +68,7 @@ namespace StudentProjectsCenterSystem.Controllers
                                 .Select(up => up?.User?.FirstName + " " + up?.User?.LastName)
                                 .ToList()
                                 ?? new List<string>(),
+                Favorite = project?.Favorite ?? false
             }).ToList();
 
             return new ApiResponse(200, "Projects retrieved successfully", projectDTOs);

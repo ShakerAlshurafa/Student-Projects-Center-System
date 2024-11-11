@@ -169,7 +169,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Workgroups", (string)null);
+                    b.ToTable("Workgroups");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>
@@ -191,7 +191,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectDetailsSections", (string)null);
+                    b.ToTable("ProjectDetailsSections");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.UserProject", b =>
@@ -210,7 +210,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("UserProjects", (string)null);
+                    b.ToTable("UserProjects");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.LocalUser", b =>
@@ -325,10 +325,10 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[WorkgroupId] IS NOT NULL");
 
-                    b.ToTable("Projects", (string)null);
+                    b.ToTable("Projects");
                 });
 
-            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.project.ProjectDetails", b =>
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.project.ProjectDetailEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -338,7 +338,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<byte[]>("IconData")
                         .HasColumnType("varbinary(max)");
@@ -348,13 +349,14 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectDetailsSectionId");
 
-                    b.ToTable("ProjectDetails", (string)null);
+                    b.ToTable("ProjectDetails");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -448,7 +450,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Navigation("Workgroup");
                 });
 
-            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.project.ProjectDetails", b =>
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.project.ProjectDetailEntity", b =>
                 {
                     b.HasOne("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", "ProjectDetailsSection")
                         .WithMany("ProjectDetails")
