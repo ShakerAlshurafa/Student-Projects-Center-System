@@ -1,5 +1,5 @@
-﻿using StudentProjectsCenterSystem.Core.Entities.Domain;
-using StudentProjectsCenterSystem.Core.Entities.Domain.project;
+﻿using StudentProjectsCenterSystem.Core.Entities.Domain.project;
+using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 
 namespace StudentProjectsCenterSystem.Core.Entities.project
 {

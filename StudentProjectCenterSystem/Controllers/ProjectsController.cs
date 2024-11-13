@@ -1,12 +1,9 @@
 ﻿using AutoMapper;
-using Castle.Core.Resource;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.Domain;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
+using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.project;

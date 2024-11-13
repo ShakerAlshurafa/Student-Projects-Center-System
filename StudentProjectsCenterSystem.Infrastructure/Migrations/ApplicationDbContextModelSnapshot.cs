@@ -155,23 +155,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.Workgroup", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Workgroups");
-                });
-
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>
                 {
                     b.Property<int>("Id")
@@ -211,6 +194,62 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("UserProjects");
+                });
+
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Task", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("WorkgroupId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkgroupId");
+
+                    b.ToTable("Tasks");
+                });
+
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Workgroups");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.LocalUser", b =>
@@ -440,9 +479,20 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Task", b =>
+                {
+                    b.HasOne("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", "Workgroup")
+                        .WithMany("Tasks")
+                        .HasForeignKey("WorkgroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workgroup");
+                });
+
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.project.Project", b =>
                 {
-                    b.HasOne("StudentProjectsCenterSystem.Core.Entities.Domain.Workgroup", "Workgroup")
+                    b.HasOne("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", "Workgroup")
                         .WithOne("Project")
                         .HasForeignKey("StudentProjectsCenterSystem.Core.Entities.project.Project", "WorkgroupId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -461,14 +511,16 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Navigation("ProjectDetailsSection");
                 });
 
-            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.Workgroup", b =>
-                {
-                    b.Navigation("Project");
-                });
-
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>
                 {
                     b.Navigation("ProjectDetails");
+                });
+
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", b =>
+                {
+                    b.Navigation("Project");
+
+                    b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.LocalUser", b =>
