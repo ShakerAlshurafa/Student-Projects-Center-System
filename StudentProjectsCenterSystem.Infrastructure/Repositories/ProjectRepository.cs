@@ -18,18 +18,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             this.dbContext = dbContext;
         }
 
-
-        public async Task<List<Project>> GetAllWithUser(Expression<Func<Project, bool>>? filter = null, int PageSize = 6, int PageNumber = 1)
-        {
-            var model = await dbContext.Projects
-                        .Include(p => p.Workgroup)
-                        .Include(p => p.UserProjects)
-                        .ThenInclude(up => up.User) 
-                        .ToListAsync();
-
-            return model;
-        }
-
         public async Task<ProjectDetailsDTO> GetByIdWithDetails(int id)
         {
             var project = await dbContext.Projects
