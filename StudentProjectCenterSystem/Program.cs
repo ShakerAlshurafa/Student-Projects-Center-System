@@ -46,6 +46,7 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(ITokenServices), typeof(TokenService));
             builder.Services.AddScoped(typeof(IProjectDetailsSectionsRepository), typeof(ProjectDetailsSectionsRepository));
             builder.Services.AddScoped(typeof(IProjectDetailsRepository), typeof(ProjectDetailsRepository));
+            builder.Services.AddScoped(typeof(IWorkgroupRepository), typeof(WorkgroupRepository));
 
             builder.Services.AddTransient<IEmailService, EmailService>();
 

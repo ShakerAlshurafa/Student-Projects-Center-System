@@ -22,4 +22,8 @@
     <ProjectReference Include="..\StudentProjectsCenterSystem.Services\StudentProjectsCenterSystem.Services.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Utilities\Files\" />
+  </ItemGroup>
+
 </Project>

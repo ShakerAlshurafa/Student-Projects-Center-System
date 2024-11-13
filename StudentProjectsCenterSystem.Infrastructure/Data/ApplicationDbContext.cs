@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.Domain;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
+using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.project;
 
 
@@ -34,6 +34,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
         public DbSet<LocalUser> LocalUsers { get; set; }
         public DbSet<UserProject> UserProjects { get; set; }
         public DbSet<Workgroup> Workgroups { get; set; }
+        public DbSet<StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Task> Tasks { get; set; }
 
     }
 }
