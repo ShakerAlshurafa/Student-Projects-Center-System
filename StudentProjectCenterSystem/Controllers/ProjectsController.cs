@@ -38,7 +38,7 @@ namespace StudentProjectsCenterSystem.Controllers
             {
                 filter = x => x.Name.Contains(projectName);
             }
-            var model = await unitOfWork.projectRepository.GetAllWithUser(filter, PageSize, PageNumber);
+            var model = await unitOfWork.projectRepository.GetAll(filter, PageSize, PageNumber, "Workgroup,UserProjects.User"); ;
 
             if (!model.Any())
             {
@@ -72,6 +72,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
+        // test this end point
         [HttpGet("mine")]
         //[ResponseCache(CacheProfileName = ("defaultCache"))]
         public async Task<ActionResult<ApiResponse>> GetAllMyProject([FromQuery] string? projectName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
@@ -95,7 +96,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 return Unauthorized(new ApiResponse(401, "User not found"));
             }
 
-            var model = await unitOfWork.projectRepository.GetAllWithUser(filter, PageSize, PageNumber);
+            var model = await unitOfWork.projectRepository.GetAll(filter, PageSize, PageNumber, "Workgroup,UserProjects.User");
             if (!model.Any())
             {
                 return new ApiResponse(404, "No Projects Found");
