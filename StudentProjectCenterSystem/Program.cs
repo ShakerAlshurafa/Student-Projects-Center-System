@@ -47,6 +47,7 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(IProjectDetailsSectionsRepository), typeof(ProjectDetailsSectionsRepository));
             builder.Services.AddScoped(typeof(IProjectDetailsRepository), typeof(ProjectDetailsRepository));
             builder.Services.AddScoped(typeof(IWorkgroupRepository), typeof(WorkgroupRepository));
+            builder.Services.AddScoped(typeof(ITaskRepository), typeof(TaskRepository));
 
             builder.Services.AddTransient<IEmailService, EmailService>();
 
@@ -121,9 +122,9 @@ namespace StudentProjectCenterSystem
 
             // Configure the HTTP request pipeline.
             // if (app.Environment.IsDevelopment())
-           //  {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+            //  {
+            app.UseSwagger();
+            app.UseSwaggerUI();
             // }
 
             app.UseHttpsRedirection();
