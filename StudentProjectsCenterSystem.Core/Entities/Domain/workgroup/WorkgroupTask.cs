@@ -28,7 +28,7 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
         public List<string> ValidExtensions = new List<string>();
 
         public string? FilePath { get; set; }
-
+        public string? FileName { get; set; }
 
         [JsonIgnore]
         public int WorkgroupId { get; set; }
