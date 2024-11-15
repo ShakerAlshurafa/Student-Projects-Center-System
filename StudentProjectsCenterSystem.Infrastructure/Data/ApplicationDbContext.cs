@@ -34,7 +34,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
         public DbSet<LocalUser> LocalUsers { get; set; }
         public DbSet<UserProject> UserProjects { get; set; }
         public DbSet<Workgroup> Workgroups { get; set; }
-        public DbSet<StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Task> Tasks { get; set; }
+        public DbSet<StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.WorkgroupTask> Tasks { get; set; }
 
     }
 }

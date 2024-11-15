@@ -196,7 +196,27 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.ToTable("UserProjects");
                 });
 
-            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Task", b =>
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Workgroups");
+                });
+
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.WorkgroupTask", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -210,6 +230,9 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.Property<DateTime>("End")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Start")
                         .HasColumnType("datetime2");
@@ -230,26 +253,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.HasIndex("WorkgroupId");
 
                     b.ToTable("Tasks");
-                });
-
-            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Progress")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Workgroups");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.LocalUser", b =>
@@ -479,7 +482,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Task", b =>
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.WorkgroupTask", b =>
                 {
                     b.HasOne("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", "Workgroup")
                         .WithMany("Tasks")

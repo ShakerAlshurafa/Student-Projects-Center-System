@@ -1,4 +1,5 @@
 ﻿using StudentProjectsCenterSystem.Core.Entities.project;
+using System.Text.Json.Serialization;
 
 namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
 {
@@ -13,6 +14,7 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
         public Project? Project { get; set; }  // Navigation Property
 
         // One-to-Many Relationship with Task
-        public ICollection<Task> Tasks { get; set; } = new List<Task>();
+        [JsonIgnore]
+        public ICollection<WorkgroupTask> Tasks { get; set; } = new List<WorkgroupTask>();
     }
 }

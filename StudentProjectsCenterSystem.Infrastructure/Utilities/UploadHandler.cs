@@ -5,7 +5,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Utilities
     public class UploadHandler
     {
         private readonly List<string> _validExtensions;
-        private const long MaxFileSize = 20 * 1024 * 1024; // 20 MB
+        private const long MaxFileSize = 50 * 1024 * 1024; // 50 MB
         private readonly string _uploadDirectory;
 
         public UploadHandler(List<string> validExtensions)
@@ -37,7 +37,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Utilities
 
             if (file.Length > MaxFileSize)
             {
-                return "File size exceeds the 20MB limit.";
+                return "File size exceeds the 50MB limit.";
             }
 
             string uniqueFileName = $"{Guid.NewGuid()}{extension}";
