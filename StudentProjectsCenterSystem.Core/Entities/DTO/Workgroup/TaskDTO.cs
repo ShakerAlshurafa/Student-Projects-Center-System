@@ -14,5 +14,6 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup
         public DateTime? Start { get; set; } = new DateTime();
         public DateTime? End { get; set; } = new DateTime();
         public string? FilePath { get; set; }
+        public string? FileName { get; set; }
     }
 }

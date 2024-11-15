@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudentProjectsCenterSystem", "StudentProjectCenterSystem\StudentProjectsCenterSystem.csproj", "{5318055C-4ED7-4701-9152-FC0D0B7BB2C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudentProjectsCenter", "StudentProjectCenterSystem\StudentProjectsCenter.csproj", "{5318055C-4ED7-4701-9152-FC0D0B7BB2C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudentProjectsCenterSystem.Infrastructure", "StudentProjectsCenterSystem.Infrastructure\StudentProjectsCenterSystem.Infrastructure.csproj", "{7169ECCA-66E9-4510-B30D-33C916D4030C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudentProjectsCenter.Infrastructure", "StudentProjectsCenterSystem.Infrastructure\StudentProjectsCenter.Infrastructure.csproj", "{7169ECCA-66E9-4510-B30D-33C916D4030C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudentProjectsCenterSystem.Core", "StudentProjectsCenterSystem.Core\StudentProjectsCenterSystem.Core.csproj", "{B9BBB1BE-1DE7-4CA8-B132-B6C30C5BBF28}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudentProjectsCenter.Core", "StudentProjectsCenterSystem.Core\StudentProjectsCenter.Core.csproj", "{B9BBB1BE-1DE7-4CA8-B132-B6C30C5BBF28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudentProjectsCenterSystem.Services", "StudentProjectsCenterSystem.Services\StudentProjectsCenterSystem.Services.csproj", "{0E1C9180-57B4-4285-BE10-3505A68387AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudentProjectsCenter.Services", "StudentProjectsCenterSystem.Services\StudentProjectsCenter.Services.csproj", "{0E1C9180-57B4-4285-BE10-3505A68387AE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

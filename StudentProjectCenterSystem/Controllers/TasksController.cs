@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
@@ -15,65 +16,69 @@ namespace StudentProjectsCenterSystem.Controllers
     public class TasksController : ControllerBase
     {
         private readonly IUnitOfWork<WorkgroupTask> unitOfWork;
+        private FileDTO file;
 
         public TasksController(IUnitOfWork<WorkgroupTask> unitOfWork)
         {
             this.unitOfWork = unitOfWork;
+            file = new FileDTO();
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> Create([Required,FromQuery] int workgroupId, [FromForm] TaskCreateDto taskDto)
+        public async Task<ActionResult<ApiResponse>> Create([Required, FromQuery] int workgroupId, [FromForm] TaskCreateDto taskDto)
         {
             if (taskDto == null)
                 return BadRequest(new ApiResponse(400, "Task data is required."));
-            
-            if (!taskDto.ValidExtensions.Any())
-                return BadRequest(new ApiResponse(400, "Valid Extension is required."));
 
-            string? filePath = null;
-            string? fileName = null;
+            if (!taskDto.ValidExtensions.Any())
+                return BadRequest(new ApiResponse(400, "Valid extensions are required."));
+
 
             if (taskDto.File != null)
             {
                 UploadHandler uploadHandler = new UploadHandler(taskDto.ValidExtensions);
-                fileName = await uploadHandler.UploadAsync(taskDto.File);
 
-                if (fileName.StartsWith("File upload failed") || fileName.StartsWith("Invalid extension") || fileName == "File is empty.")
+                file = await uploadHandler.UploadAsync(taskDto.File);
+
+                if (file.ErrorMessage != null)
                 {
-                    return BadRequest(new ApiResponse(400, fileName));
+                    return BadRequest(new ApiResponse(400, file.ErrorMessage));
                 }
 
-                filePath = Path.Combine("Files", fileName);
             }
 
             var task = new WorkgroupTask
             {
                 Title = taskDto.Title,
                 Description = taskDto.Description,
-                //Status = taskDto.Status,
                 Start = taskDto.Start,
                 End = taskDto.End,
                 WorkgroupId = workgroupId,
-               FilePath = filePath
+                FilePath = file.FilePath,
+                FileName = file.FileName,
             };
 
             await unitOfWork.taskRepository.Create(task);
-            
+
             int successSave = await unitOfWork.save();
             if (successSave == 0)
             {
-                return StatusCode(500, new ApiResponse(500, "Create Failed"));
+                return StatusCode(500, new ApiResponse(500, "Create failed"));
             }
 
-            // add create response dto
-
-            return CreatedAtAction(nameof(Create), new { id = task.Id }, new ApiResponse(201, result: task));
+            return CreatedAtAction(nameof(Create), new { id = task.Id }, new ApiResponse(201, "Task created successfully", result: task));
         }
 
 
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(int id, [FromForm] TaskUpdateDTO taskDto)
         {
+            // Validate taskDto
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ApiResponse(400, "Invalid data."));
+            }
+
             // Fetch the task from the database
             var existingTask = await unitOfWork.taskRepository.GetById(id);
             if (existingTask == null)
@@ -87,26 +92,36 @@ namespace StudentProjectsCenterSystem.Controllers
             existingTask.Start = taskDto.Start ?? existingTask.Start;
             existingTask.End = taskDto.End ?? existingTask.End;
 
-            string? filePath = existingTask.FilePath; 
-            string? fileName;
 
             if (taskDto.File != null)
             {
                 if (!taskDto.ValidExtensions.Any())
                     return BadRequest(new ApiResponse(400, "Valid extensions are required for the file."));
 
-                UploadHandler uploadHandler = new UploadHandler(taskDto.ValidExtensions);
-                fileName = await uploadHandler.UploadAsync(taskDto.File);
-
-                if (fileName.StartsWith("File upload failed") || fileName.StartsWith("Invalid extension") || fileName == "File is empty.")
+                // Delete the old file if it exists
+                if (!string.IsNullOrEmpty(existingTask.FilePath) && System.IO.File.Exists(existingTask.FilePath))
                 {
-                    return BadRequest(new ApiResponse(400, fileName));
+                    try
+                    {
+                        System.IO.File.Delete(existingTask.FilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        return StatusCode(500, new ApiResponse(500, $"Failed to delete the old file: {ex.Message}"));
+                    }
                 }
 
-                filePath = Path.Combine("Files", fileName);
+                UploadHandler uploadHandler = new UploadHandler(taskDto.ValidExtensions);
+                file = await uploadHandler.UploadAsync(taskDto.File);
+
+                if (file.ErrorMessage != null)
+                {
+                    return BadRequest(new ApiResponse(400, file.FileName));
+                }
+
             }
 
-            existingTask.FilePath = filePath;
+            existingTask.FilePath = file.FilePath;
 
             // Save changes
             unitOfWork.taskRepository.Update(existingTask);
@@ -118,6 +133,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             return Ok(new ApiResponse(200, "Task updated successfully", result: existingTask));
         }
+
 
 
         // GET: api/task/{id}
@@ -137,7 +153,8 @@ namespace StudentProjectsCenterSystem.Controllers
                 Start = task.Start,
                 End = task.End,
                 FilePath = task.FilePath,
-                Status = task.Status,
+                FileName = task.FileName,
+                Status = task.Status
             };
 
             return Ok(new ApiResponse(200, result: taskDto));

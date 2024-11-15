@@ -228,13 +228,16 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("End")
+                    b.Property<DateTime?>("End")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FilePath")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Start")
+                    b.Property<DateTime?>("Start")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")

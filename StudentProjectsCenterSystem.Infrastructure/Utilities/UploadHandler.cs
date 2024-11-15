@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Utilities
 {
@@ -14,6 +15,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Utilities
                 throw new ArgumentException("Valid extensions cannot be null or empty.", nameof(validExtensions));
 
             _validExtensions = validExtensions;
+            // Refactor to save in the cloud 
             _uploadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Files");
 
             if (!Directory.Exists(_uploadDirectory))
@@ -22,38 +24,40 @@ namespace StudentProjectsCenterSystem.Infrastructure.Utilities
             }
         }
 
-        public async Task<string> UploadAsync(IFormFile file)
+        public async Task<FileDTO> UploadAsync(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
-                return "File is empty.";
+                return new FileDTO("File is empty.");
             }
 
             string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             if (!_validExtensions.Contains(extension))
             {
-                return $"Invalid extension. Allowed extensions are: {string.Join(", ", _validExtensions)}";
+                return new FileDTO($"Invalid extension. Allowed extensions are: {string.Join(", ", _validExtensions)}");
             }
 
             if (file.Length > MaxFileSize)
             {
-                return "File size exceeds the 50MB limit.";
+                return new FileDTO("File size exceeds the 50MB limit.");
             }
 
-            string uniqueFileName = $"{Guid.NewGuid()}{extension}";
-            string filePath = Path.Combine(_uploadDirectory, uniqueFileName);
+            FileDTO fileDto = new FileDTO();
+            fileDto.FileName = $"{Guid.NewGuid()}{extension}";
+            fileDto.FilePath = Path.Combine(_uploadDirectory, fileDto.FileName);
 
             try
             {
-                await using FileStream stream = new(filePath, FileMode.Create);
+                await using FileStream stream = new(fileDto.FilePath, FileMode.Create);
                 await file.CopyToAsync(stream);
             }
             catch (Exception ex)
             {
-                return $"File upload failed: {ex.Message}";
+                return new FileDTO($"File upload failed: {ex.Message}");
             }
 
-            return uniqueFileName;
+
+            return fileDto;
         }
     }
 }
