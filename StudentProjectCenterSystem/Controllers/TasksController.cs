@@ -24,6 +24,37 @@ namespace StudentProjectsCenterSystem.Controllers
             file = new FileDTO();
         }
 
+
+        [HttpGet("all-tasks")]
+        public async Task<ActionResult<ApiResponse>> GetAllTasks(
+            [Required] int workgroupId,
+            [FromQuery] int PageSize = 6,
+            [FromQuery] int PageNumber = 1)
+        {
+            // Validate workgroup existence
+            var workgroupExists = await unitOfWork.workgroupRepository.IsExist(workgroupId);
+            if (!workgroupExists)
+            {
+                return NotFound(new ApiResponse(404, "Workgroup not found."));
+            }
+
+            // Fetch tasks for the specified workgroup with pagination
+            var tasks = await unitOfWork.taskRepository.GetAll(
+                filter: t => t.WorkgroupId == workgroupId,
+                page_size: PageSize,
+                page_number: PageNumber);
+
+            // Check if tasks are available
+            if (tasks == null || !tasks.Any())
+            {
+                return Ok(new ApiResponse(200, "No tasks found for the specified workgroup."));
+            }
+
+            return Ok(new ApiResponse(200, "Tasks retrieved successfully.", tasks));
+        }
+
+
+
         [HttpPost("workgroupId")]
         public async Task<ActionResult<ApiResponse>> Create([Required] int workgroupId, [FromForm] TaskCreateDto taskDto)
         {
@@ -249,5 +280,23 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "File submitted successfully.", result: task.SubmittedFilePath));
         }
 
+
+        [HttpDelete]
+        public async Task<ActionResult<ApiResponse>> Delete([Required] int id)
+        {
+            int successDelete = unitOfWork.taskRepository.Delete(id);
+            if (successDelete == 0)
+            {
+                return NotFound(new ApiResponse(404));
+            }
+
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Deleted failed!"));
+            }
+
+            return Ok(new ApiResponse(200, "Deleted Successfully"));
+        }
     }
 }
