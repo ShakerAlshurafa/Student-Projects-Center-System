@@ -4,8 +4,6 @@
 ## Get latest from `dotnet new gitignore`
 
 
-## Folder to save Task files
-.Files
 
 # dotenv files
 .env
