@@ -5,16 +5,31 @@ namespace StudentProjectsCenterSystem.Infrastructure.Utilities
 {
     public class UploadHandler
     {
-        private readonly List<string> _validExtensions;
+        private readonly List<string> _validExtensions = new List<string>()
+        { 
+            // Image Files
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg", ".webp",
+    
+            // Document Files
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".rtf",
+    
+            // Compressed Files
+            ".zip", ".rar", ".7z", ".tar", ".gz",
+    
+            // Audio Files
+            ".mp3", ".wav", ".aac", ".ogg", ".flac",
+    
+            // Video Files
+            ".mp4", ".avi", ".mov", ".wmv", ".mkv", ".flv",
+    
+            // Code and Data Files
+            ".csv", ".json", ".xml", ".html", ".css", ".js", ".sql"
+        };
         private const long MaxFileSize = 50 * 1024 * 1024; // 50 MB
         private readonly string _uploadDirectory;
 
-        public UploadHandler(List<string> validExtensions)
+        public UploadHandler()
         {
-            if (validExtensions is null || validExtensions.Count == 0)
-                throw new ArgumentException("Valid extensions cannot be null or empty.", nameof(validExtensions));
-
-            _validExtensions = validExtensions;
             // Refactor to save in the cloud 
             _uploadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Files");
 
@@ -22,6 +37,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Utilities
             {
                 Directory.CreateDirectory(_uploadDirectory);
             }
+        }
+
+        public UploadHandler(List<string> validExtensions) : this()
+        {
+            if (validExtensions is null || validExtensions.Count == 0)
+                throw new ArgumentException("Valid extensions cannot be null or empty.", nameof(validExtensions));
+
+            _validExtensions = validExtensions;
+       
         }
 
         public async Task<FileDTO> UploadAsync(IFormFile file)

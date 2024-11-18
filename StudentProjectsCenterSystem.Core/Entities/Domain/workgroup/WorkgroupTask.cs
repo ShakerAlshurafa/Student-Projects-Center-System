@@ -25,10 +25,11 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
         public DateTime? Start { get; set; } 
         public DateTime? End { get; set; }
 
-        public List<string> ValidExtensions = new List<string>();
+        //public List<string> ValidExtensions = new List<string>();
 
-        public string? FilePath { get; set; }
-        public string? FileName { get; set; }
+        public string? QuestionFilePath { get; set; }
+        public string? SubmittedFilePath { get; set; }
+        //public string? FileName { get; set; }
 
         [JsonIgnore]
         public int WorkgroupId { get; set; }
