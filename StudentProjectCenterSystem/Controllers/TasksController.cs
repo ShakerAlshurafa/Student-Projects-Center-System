@@ -24,8 +24,8 @@ namespace StudentProjectsCenterSystem.Controllers
             file = new FileDTO();
         }
 
-        [HttpPost]
-        public async Task<ActionResult<ApiResponse>> Create([Required, FromQuery] int workgroupId, [FromForm] TaskCreateDto taskDto)
+        [HttpPost("workgroupId")]
+        public async Task<ActionResult<ApiResponse>> Create([Required] int workgroupId, [FromForm] TaskCreateDto taskDto)
         {
             if (taskDto == null)
                 return BadRequest(new ApiResponse(400, "Task data is required."));
@@ -33,6 +33,13 @@ namespace StudentProjectsCenterSystem.Controllers
             if (!taskDto.ValidExtensions.Any())
                 return BadRequest(new ApiResponse(400, "Valid extensions are required."));
 
+            // Check if dates are in the future
+            if (taskDto.Start < DateTime.UtcNow || taskDto.End < DateTime.UtcNow)
+                return BadRequest(new ApiResponse(400, "Dates must not be in the past."));
+
+            // Check if Start and End dates are valid
+            if (taskDto.Start >= taskDto.End)
+                return BadRequest(new ApiResponse(400, "The start date must be earlier than the end date."));
 
             if (taskDto.File != null)
             {
@@ -92,6 +99,14 @@ namespace StudentProjectsCenterSystem.Controllers
             existingTask.Start = taskDto.Start ?? existingTask.Start;
             existingTask.End = taskDto.End ?? existingTask.End;
 
+            // Check if dates are in the future
+            if (existingTask.Start < DateTime.UtcNow || existingTask.End < DateTime.UtcNow)
+                return BadRequest(new ApiResponse(400, "Dates must not be in the past."));
+
+            // Check if Start and End dates are valid
+            if (existingTask.Start >= existingTask.End)
+                return BadRequest(new ApiResponse(400, "The start date must be earlier than the end date."));
+
 
             if (taskDto.File != null)
             {
@@ -135,10 +150,9 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-
         // GET: api/task/{id}
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetTask(int id)
+        public async Task<ActionResult<ApiResponse>> GetTask(int id)
         {
             var task = await unitOfWork.taskRepository.GetById(id);
             if (task == null)
@@ -159,8 +173,38 @@ namespace StudentProjectsCenterSystem.Controllers
 
             return Ok(new ApiResponse(200, result: taskDto));
         }
-    
-    
+
+
+        [HttpPut("change-status/{id}")]
+        public async Task<ActionResult<ApiResponse>> ChangeStatus([Required] int id, [Required, FromBody] string status)
+        {
+            // Validate the status input
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return BadRequest(new ApiResponse(400, "Status is required."));
+            }
+
+            // Retrieve the task from the repository
+            var existingTask = await unitOfWork.taskRepository.GetById(id);
+            if (existingTask == null)
+            {
+                return NotFound(new ApiResponse(404, "Task not found."));
+            }
+
+            // Update the status
+            existingTask.Status = status;
+
+            // Save the updated task
+            unitOfWork.taskRepository.Update(existingTask);
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Failed to update task status."));
+            }
+
+            return Ok(new ApiResponse(200, "Task status updated successfully.", result: status));
+        }
+
 
     }
 }
