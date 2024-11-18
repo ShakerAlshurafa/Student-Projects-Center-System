@@ -231,10 +231,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Property<DateTime?>("End")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
+                    b.Property<string>("QuestionFilePath")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("Start")
@@ -242,6 +239,9 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SubmittedFilePath")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")

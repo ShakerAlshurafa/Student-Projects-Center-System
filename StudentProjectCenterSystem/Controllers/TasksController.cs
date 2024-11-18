@@ -30,8 +30,8 @@ namespace StudentProjectsCenterSystem.Controllers
             if (taskDto == null)
                 return BadRequest(new ApiResponse(400, "Task data is required."));
 
-            if (!taskDto.ValidExtensions.Any())
-                return BadRequest(new ApiResponse(400, "Valid extensions are required."));
+            //if (!taskDto.ValidExtensions.Any())
+            //    return BadRequest(new ApiResponse(400, "Valid extensions are required."));
 
             // Check if dates are in the future
             if (taskDto.Start < DateTime.UtcNow || taskDto.End < DateTime.UtcNow)
@@ -43,7 +43,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             if (taskDto.File != null)
             {
-                UploadHandler uploadHandler = new UploadHandler(taskDto.ValidExtensions);
+                UploadHandler uploadHandler = new UploadHandler();
 
                 file = await uploadHandler.UploadAsync(taskDto.File);
 
@@ -61,8 +61,8 @@ namespace StudentProjectsCenterSystem.Controllers
                 Start = taskDto.Start,
                 End = taskDto.End,
                 WorkgroupId = workgroupId,
-                FilePath = file.FilePath,
-                FileName = file.FileName,
+                QuestionFilePath = file.FilePath,
+                //FileName = file.FileName,
             };
 
             await unitOfWork.taskRepository.Create(task);
@@ -108,17 +108,17 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiResponse(400, "The start date must be earlier than the end date."));
 
 
-            if (taskDto.File != null)
+            if (taskDto.QuestionFile != null)
             {
-                if (!taskDto.ValidExtensions.Any())
-                    return BadRequest(new ApiResponse(400, "Valid extensions are required for the file."));
+                //if (!taskDto.ValidExtensions.Any())
+                //    return BadRequest(new ApiResponse(400, "Valid extensions are required for the file."));
 
                 // Delete the old file if it exists
-                if (!string.IsNullOrEmpty(existingTask.FilePath) && System.IO.File.Exists(existingTask.FilePath))
+                if (!string.IsNullOrEmpty(existingTask.QuestionFilePath) && System.IO.File.Exists(existingTask.QuestionFilePath))
                 {
                     try
                     {
-                        System.IO.File.Delete(existingTask.FilePath);
+                        System.IO.File.Delete(existingTask.QuestionFilePath);
                     }
                     catch (Exception ex)
                     {
@@ -126,17 +126,16 @@ namespace StudentProjectsCenterSystem.Controllers
                     }
                 }
 
-                UploadHandler uploadHandler = new UploadHandler(taskDto.ValidExtensions);
-                file = await uploadHandler.UploadAsync(taskDto.File);
+                UploadHandler uploadHandler = new UploadHandler();
+                file = await uploadHandler.UploadAsync(taskDto.QuestionFile);
 
                 if (file.ErrorMessage != null)
                 {
                     return BadRequest(new ApiResponse(400, file.FileName));
                 }
 
+                 existingTask.QuestionFilePath = file.FilePath;
             }
-
-            existingTask.FilePath = file.FilePath;
 
             // Save changes
             unitOfWork.taskRepository.Update(existingTask);
@@ -166,8 +165,9 @@ namespace StudentProjectsCenterSystem.Controllers
                 Description = task.Description,
                 Start = task.Start,
                 End = task.End,
-                FilePath = task.FilePath,
-                FileName = task.FileName,
+                QuestionFilePath = task.QuestionFilePath,
+                SubmittedFilePath = task.SubmittedFilePath,
+                //FileName = task.FileName,
                 Status = task.Status
             };
 
@@ -175,7 +175,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpPut("change-status/{id}")]
+        [HttpPut("{id}/change-status")]
         public async Task<ActionResult<ApiResponse>> ChangeStatus([Required] int id, [Required, FromBody] string status)
         {
             // Validate the status input
@@ -205,6 +205,49 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "Task status updated successfully.", result: status));
         }
 
+
+        [HttpPost("{id}/submit-answer")]
+        public async Task<ActionResult<ApiResponse>> SubmitAnswer([Required] int id, [FromForm] TaskSubmitDTO taskSubmitDTO)
+        {
+            if (taskSubmitDTO == null || taskSubmitDTO.File == null || taskSubmitDTO.File.Length == 0)
+            {
+                return BadRequest(new ApiResponse(400, "A valid file is required."));
+            }
+
+            var task = await unitOfWork.taskRepository.GetById(id);
+            if (task == null)
+            {
+                return NotFound(new ApiResponse(404, "Task not found."));
+            }
+
+            // Ensure the task is not already submitted or in an invalid state
+            if (task.Status.ToLower() == "submitted" || task.Status.ToLower() == "approved" 
+                || task.Status.ToLower() == "on hold" || task.Status.ToLower() == "canceled")
+            {
+                return BadRequest(new ApiResponse(400, "The task is already finalized or in a non-submittable state, and cannot accept new submissions."));
+            }
+
+
+            UploadHandler uploadHandler = new UploadHandler();
+            var uploadedFile = await uploadHandler.UploadAsync(taskSubmitDTO.File);
+            if (uploadedFile.ErrorMessage != null)
+            {
+                return BadRequest(new ApiResponse(400, uploadedFile.ErrorMessage));
+            }
+
+            // Update task with the submitted file information
+            task.SubmittedFilePath = uploadedFile.FilePath;  // Store the submitted file path
+            task.Status = "Submitted";  // Update task status to Submitted
+
+            unitOfWork.taskRepository.Update(task);
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Failed to save submission."));
+            }
+
+            return Ok(new ApiResponse(200, "File submitted successfully.", result: task.SubmittedFilePath));
+        }
 
     }
 }
