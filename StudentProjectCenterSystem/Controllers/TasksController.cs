@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
+using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using StudentProjectsCenterSystem.Infrastructure.Repositories;
 using StudentProjectsCenterSystem.Infrastructure.Utilities;
 using System.ComponentModel.DataAnnotations;
 
@@ -16,13 +16,48 @@ namespace StudentProjectsCenterSystem.Controllers
     public class TasksController : ControllerBase
     {
         private readonly IUnitOfWork<WorkgroupTask> unitOfWork;
+        private readonly IMapper mapper;
         private FileDTO file;
 
-        public TasksController(IUnitOfWork<WorkgroupTask> unitOfWork)
+        public TasksController(IUnitOfWork<WorkgroupTask> unitOfWork, IMapper mapper)
         {
             this.unitOfWork = unitOfWork;
+            this.mapper = mapper;
             file = new FileDTO();
         }
+
+
+        [HttpGet("all-tasks")]
+        public async Task<ActionResult<ApiResponse>> GetAllTasks(
+            [Required] int workgroupId,
+            [FromQuery] int PageSize = 6,
+            [FromQuery] int PageNumber = 1)
+        {
+            // Validate workgroup existence
+            var workgroupExists = await unitOfWork.workgroupRepository.IsExist(workgroupId);
+            if (!workgroupExists)
+            {
+                return NotFound(new ApiResponse(404, "Workgroup not found."));
+            }
+
+            // Fetch tasks for the specified workgroup with pagination
+            var tasks = await unitOfWork.taskRepository.GetAll(
+                filter: t => t.WorkgroupId == workgroupId,
+                page_size: PageSize,
+                page_number: PageNumber);
+
+            // Check if tasks are available
+            if (tasks == null || !tasks.Any())
+            {
+                return Ok(new ApiResponse(200, "No tasks found for the specified workgroup."));
+            }
+
+            var taskDto = mapper.Map<List<AllTaskDTO>>(tasks);
+
+            return Ok(new ApiResponse(200, "Tasks retrieved successfully.", taskDto));
+        }
+
+
 
         [HttpPost("workgroupId")]
         public async Task<ActionResult<ApiResponse>> Create([Required] int workgroupId, [FromForm] TaskCreateDto taskDto)
@@ -134,7 +169,7 @@ namespace StudentProjectsCenterSystem.Controllers
                     return BadRequest(new ApiResponse(400, file.FileName));
                 }
 
-                 existingTask.QuestionFilePath = file.FilePath;
+                existingTask.QuestionFilePath = file.FilePath;
             }
 
             // Save changes
@@ -221,8 +256,9 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             // Ensure the task is not already submitted or in an invalid state
-            if (task.Status.ToLower() == "submitted" || task.Status.ToLower() == "approved" 
-                || task.Status.ToLower() == "on hold" || task.Status.ToLower() == "canceled")
+            if (task.Status.ToLower() == "submitted" || task.Status.ToLower() == "approved"
+                || task.Status.ToLower() == "on hold" || task.Status.ToLower() == "canceled"
+                || task.Status.ToLower() == "completed")
             {
                 return BadRequest(new ApiResponse(400, "The task is already finalized or in a non-submittable state, and cannot accept new submissions."));
             }
@@ -249,5 +285,23 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "File submitted successfully.", result: task.SubmittedFilePath));
         }
 
+
+        [HttpDelete]
+        public async Task<ActionResult<ApiResponse>> Delete([Required] int id)
+        {
+            int successDelete = unitOfWork.taskRepository.Delete(id);
+            if (successDelete == 0)
+            {
+                return NotFound(new ApiResponse(404));
+            }
+
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Deleted failed!"));
+            }
+
+            return Ok(new ApiResponse(200, "Deleted Successfully"));
+        }
     }
 }
