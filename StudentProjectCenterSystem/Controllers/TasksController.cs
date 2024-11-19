@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
+using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using StudentProjectsCenterSystem.Infrastructure.Repositories;
 using StudentProjectsCenterSystem.Infrastructure.Utilities;
 using System.ComponentModel.DataAnnotations;
 
@@ -16,11 +16,13 @@ namespace StudentProjectsCenterSystem.Controllers
     public class TasksController : ControllerBase
     {
         private readonly IUnitOfWork<WorkgroupTask> unitOfWork;
+        private readonly IMapper mapper;
         private FileDTO file;
 
-        public TasksController(IUnitOfWork<WorkgroupTask> unitOfWork)
+        public TasksController(IUnitOfWork<WorkgroupTask> unitOfWork, IMapper mapper)
         {
             this.unitOfWork = unitOfWork;
+            this.mapper = mapper;
             file = new FileDTO();
         }
 
@@ -50,7 +52,9 @@ namespace StudentProjectsCenterSystem.Controllers
                 return Ok(new ApiResponse(200, "No tasks found for the specified workgroup."));
             }
 
-            return Ok(new ApiResponse(200, "Tasks retrieved successfully.", tasks));
+            var taskDto = mapper.Map<List<AllTaskDTO>>(tasks);
+
+            return Ok(new ApiResponse(200, "Tasks retrieved successfully.", taskDto));
         }
 
 
@@ -165,7 +169,7 @@ namespace StudentProjectsCenterSystem.Controllers
                     return BadRequest(new ApiResponse(400, file.FileName));
                 }
 
-                 existingTask.QuestionFilePath = file.FilePath;
+                existingTask.QuestionFilePath = file.FilePath;
             }
 
             // Save changes
@@ -252,8 +256,9 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             // Ensure the task is not already submitted or in an invalid state
-            if (task.Status.ToLower() == "submitted" || task.Status.ToLower() == "approved" 
-                || task.Status.ToLower() == "on hold" || task.Status.ToLower() == "canceled")
+            if (task.Status.ToLower() == "submitted" || task.Status.ToLower() == "approved"
+                || task.Status.ToLower() == "on hold" || task.Status.ToLower() == "canceled"
+                || task.Status.ToLower() == "completed")
             {
                 return BadRequest(new ApiResponse(400, "The task is already finalized or in a non-submittable state, and cannot accept new submissions."));
             }

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
+using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Utilities
 {
