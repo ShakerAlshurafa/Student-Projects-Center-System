@@ -1,12 +1,9 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.DTO;
-using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using StudentProjectsCenterSystem.Infrastructure.Repositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 
@@ -58,6 +55,95 @@ namespace StudentProjectsCenterSystem.Controllers
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
 
+
+        [HttpGet("get-all-supervisors")]
+        public async Task<ActionResult<ApiResponse>> GetSupervisors([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        {
+            Expression<Func<LocalUser, bool>> filter = x => 
+                x.UserProjects.All(u => u.Role.ToLower() == "supervisor" || u.Role.ToLower() == "co-supervisor");
+
+            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber);
+
+            var userDTOs = new List<SupervisorDTO>();
+
+            foreach (var user in usersList)
+            {
+                userDTOs.Add(new SupervisorDTO
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    MiddleName = user.MiddleName,
+                    LastName = user.LastName,
+                    Email = user.Email ?? ""
+                });
+            }
+
+            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+        }
+
+
+        [HttpGet("get-all-sudents")]
+        public async Task<ActionResult<ApiResponse>> GetSudents([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        {
+            Expression<Func<LocalUser, bool>> filter = x =>
+                x.UserProjects.All(u => u.Role.ToLower() == "student");
+
+            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber,"UserProjects.Project");
+
+            var userDTOs = new List<StudentDTO>();
+
+            foreach (var user in usersList)
+            {
+                var workgroupName = user.UserProjects?
+                    .Where(u => u.UserId == user.Id)
+                    .Select(p => p.Project.Name)
+                    .FirstOrDefault() ?? "";
+
+                userDTOs.Add(new StudentDTO
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    MiddleName = user.MiddleName,
+                    LastName = user.LastName,
+                    Email = user.Email ?? "", // Ensure Email is never null
+                    WorkgroupName = workgroupName
+                });
+            }
+
+            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+        }
+        
+        [HttpGet("get-all-customers")]
+        public async Task<ActionResult<ApiResponse>> GetCustomers([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        {
+            Expression<Func<LocalUser, bool>> filter = x =>
+                x.UserProjects.All(u => u.Role.ToLower() == "customer");
+
+            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber, "UserProjects.Project");
+
+            var userDTOs = new List<CustomerDTO>();
+
+            foreach (var user in usersList)
+            {
+                var workgroupName = user.UserProjects?
+                    .Where(u => u.UserId == user.Id)
+                    .Select(p => p.Project.Name)
+                    .FirstOrDefault() ?? "";
+
+                userDTOs.Add(new CustomerDTO
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email ?? "", // Ensure Email is never null
+                    WorkgroupName = workgroupName,
+                    Company = user.CompanyName ?? ""
+                });
+            }
+
+            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+        }
+
         [HttpPut("change-role")]
         public async Task<ActionResult<ApiResponse>> ChangeRole([FromQuery, Required] string userId, [FromBody, Required] string newRole)
         {
@@ -72,6 +158,8 @@ namespace StudentProjectsCenterSystem.Controllers
             {
                 return NotFound(new ApiResponse(404, "User not found."));
             }
+
+            newRole = newRole.ToLower();
 
             // Check if the role exists
             var roleExists = await roleManager.RoleExistsAsync(newRole);
@@ -99,6 +187,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             return Ok(new ApiResponse(200, $"Role changed successfully to '{newRole}' for user '{user.UserName}'."));
         }
+
 
     }
 }

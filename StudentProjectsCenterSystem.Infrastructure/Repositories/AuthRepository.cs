@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
@@ -97,6 +98,12 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 
         public async Task<ApiResponse> Register(RegisterationRequestDTO registerationRequestDTO)
         {
+            var emailExist = await userManager.FindByEmailAsync(registerationRequestDTO.Email);
+            if (emailExist != null)
+            {
+                return new ApiResponse(400, "Email is already taken.");
+            }
+
             var user = new LocalUser
             {
                 UserName = registerationRequestDTO.FirstName + "_" + registerationRequestDTO.LastName,
