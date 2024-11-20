@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
+using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
-using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetailsSection;

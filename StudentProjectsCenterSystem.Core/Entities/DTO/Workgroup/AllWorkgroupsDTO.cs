@@ -15,5 +15,6 @@ namespace StudentProjectsCenter.Core.Entities.DTO.Workgroup
         public string? CoSupervisorName { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string Company { get; set; } = string.Empty;
+        public List<string> Team { get; set; } = new List<string>();
     }
 }

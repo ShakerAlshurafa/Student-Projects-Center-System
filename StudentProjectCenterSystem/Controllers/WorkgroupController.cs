@@ -33,7 +33,7 @@ namespace StudentProjectsCenterSystem.Controllers
         public async Task<ActionResult<ApiResponse>> GetAll(
             [FromQuery] string? workgroupName = null, 
             [FromQuery] int PageSize = 6, 
-            [FromQuery] int PageNumber = 1)
+             [FromQuery] int PageNumber = 1)
         {
             Expression<Func<Workgroup, bool>> filter = x => true;
             if (!string.IsNullOrEmpty(workgroupName))
@@ -62,6 +62,11 @@ namespace StudentProjectsCenterSystem.Controllers
                                         .FirstOrDefault(u => u.Role == "Customer")?.User.UserName ?? string.Empty,
                     Company = userProjects
                                         .FirstOrDefault(u => u.Role == "Customer")?.User.CompanyName ?? string.Empty,
+                    Team = userProjects
+                                .Where(up => up.Role == "Student")?
+                                .Select(up => up?.User?.FirstName + " " + up?.User?.LastName)
+                                .ToList()
+                                ?? new List<string>(),
                 };
             });
 
