@@ -80,7 +80,8 @@ namespace StudentProjectsCenterSystem.Controllers
             [FromQuery] int pageSize = 6,
             [FromQuery] int pageNumber = 1)
         {
-            
+
+
             // Retrieve the logged-in user's ID from the claims
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
