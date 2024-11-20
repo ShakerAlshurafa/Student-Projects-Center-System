@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
@@ -10,6 +11,7 @@ using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Security.Claims;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
@@ -72,37 +74,28 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        // test this end point
-        [HttpGet("mine")]
+        [HttpGet("get-all-for-user")]
+        [Authorize]
         //[ResponseCache(CacheProfileName = ("defaultCache"))]
-        public async Task<ActionResult<ApiResponse>> GetAllMyProject([FromQuery] string? projectName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        public async Task<ActionResult<ApiResponse>> GetAllForUser([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
-            Expression<Func<Project, bool>> filter = null!;
-            if (!string.IsNullOrEmpty(projectName))
+            // Retrieve the logged-in user's ID from the claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
             {
-                filter = x => x.Name.Contains(projectName);
+                return Unauthorized(new ApiResponse(401, "User not Find."));
             }
 
-            var userName = User?.Identity?.Name;
-            if (string.IsNullOrEmpty(userName))
-            {
-                return Unauthorized(new ApiResponse(401, "User not logged in"));
-            }
+            // Filter workgroups where the logged-in user is associated
+            Expression<Func<Project, bool>> filter = x =>
+                x.UserProjects.Any(up => up.UserId == userId);
 
-            // Find the user by username
-            var user = await userManager.FindByNameAsync(userName);
-            if (user == null)
-            {
-                return Unauthorized(new ApiResponse(401, "User not found"));
-            }
-
-            var model = await unitOfWork.projectRepository.GetAll(filter, PageSize, PageNumber, "Workgroup,UserProjects.User");
-            if (!model.Any())
+            var projects = await unitOfWork.projectRepository.GetAll(filter, PageSize, PageNumber, "Workgroup,UserProjects.User");
+            if (!projects.Any())
             {
                 return new ApiResponse(404, "No Projects Found");
             }
-
-            var projects = model.Where(p => p.UserProjects.Any(up => up.UserId == user?.Id)).ToList();
 
             var projectDTOs = mapper.Map<List<MyProjectDTO>>(projects);
 
