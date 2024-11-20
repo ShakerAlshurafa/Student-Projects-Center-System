@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.Entities;
@@ -10,6 +11,7 @@ using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Repositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Security.Claims;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
@@ -65,6 +67,53 @@ namespace StudentProjectsCenterSystem.Controllers
 
             return Ok(new ApiResponse(200, "Workgroups retrieved successfully", viewModel));
         }
+
+
+        [HttpGet("get-all-for-user")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse>> GetAllForUser(
+            [FromQuery] int pageSize = 6,
+            [FromQuery] int pageNumber = 1)
+        {
+            
+            // Retrieve the logged-in user's ID from the claims
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new ApiResponse(401, "User not Find."));
+            }
+
+            // Filter workgroups where the logged-in user is associated
+            Expression<Func<Workgroup, bool>> filter = x =>
+                x.Project.UserProjects.Any(up => up.UserId == userId);
+
+            
+            var workgroups = await unitOfWork.workgroupRepository.GetAll(filter, pageSize, pageNumber, "Project.UserProjects.User");
+
+            if (!workgroups.Any())
+            {
+                return Ok(new ApiResponse(200, "No Workgroups Found for the user."));
+            }
+
+            // Transform data into DTO
+            var viewModel = workgroups.Select(w =>
+            {
+                var userProjects = w?.Project?.UserProjects ?? new List<UserProject>();
+                return new AllWorkgroupsDTO
+                {
+                    Id = w.Id,
+                    Name = w.Name,
+                    SupervisorName = userProjects.FirstOrDefault(u => u.Role == "Supervisor")?.User.UserName ?? string.Empty,
+                    CoSupervisorName = userProjects.FirstOrDefault(u => u.Role == "Co-Supervisor")?.User.UserName ?? string.Empty,
+                    CustomerName = userProjects.FirstOrDefault(u => u.Role == "Customer")?.User.UserName ?? string.Empty,
+                    Company = userProjects.FirstOrDefault(u => u.Role == "Customer")?.User.CompanyName ?? string.Empty,
+                };
+            });
+
+            return Ok(new ApiResponse(200, "Workgroups retrieved successfully for the user.", viewModel));
+        }
+
 
 
         [HttpGet("{id}")]
