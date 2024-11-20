@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Castle.Core.Configuration;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenterSystem.Core.Entities;
@@ -11,11 +12,13 @@ namespace StudentProjectsCenterSystem.Services
 {
     public class TokenService : ITokenServices
     {
-        private readonly IConfiguration configuration;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration configuration;
         private readonly UserManager<LocalUser> userManager;
         private readonly string secretKey;
 
-        public TokenService(IConfiguration configuration, UserManager<LocalUser> userManager)
+        public TokenService(
+            Microsoft.Extensions.Configuration.IConfiguration configuration,
+            UserManager<LocalUser> userManager)
         {
             this.configuration = configuration;
             this.userManager = userManager;
@@ -34,18 +37,23 @@ namespace StudentProjectsCenterSystem.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Email, localUser?.Email ?? ""),
-                new Claim(ClaimTypes.Name, localUser?.UserName ?? ""),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(ClaimTypes.Name, localUser?.UserName ?? throw new InvalidOperationException("UserName is required")),
+                new Claim(ClaimTypes.NameIdentifier, localUser?.Id ?? throw new InvalidOperationException("User ID is required")),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
+                new Claim(JwtRegisteredClaimNames.Sub, localUser?.Id ?? "") // Subject claim for user ID
             };
 
+            // Fetch roles and add them as claims
             var roles = await userManager.GetRolesAsync(localUser);
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+            var jwtExpirationDays = configuration.GetValue<int>("TokenSettings:JWTExpirationDays");
 
             // Create the token
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(7), // Token expiration time
+                Expires = DateTime.UtcNow.AddDays(jwtExpirationDays), // Token expiration time
                 SigningCredentials = creds,
             };
 

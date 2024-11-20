@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.IRepositories;
@@ -51,9 +52,12 @@ namespace StudentProjectCenterSystem
 
             builder.Services.AddTransient<IEmailService, EmailService>();
 
+            // Tokens used for password reset, email confirmation, or account activation.
             builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
             {
-                options.TokenLifespan = TimeSpan.FromHours(1);
+                options.TokenLifespan = TimeSpan.FromHours(
+                    builder.Configuration.GetValue<int>("TokenSettings:IdentityTokenLifespanHours")
+                );
             });
 
             var key = builder.Configuration.GetValue<string>("ApiSetting:SecretKey");
@@ -114,6 +118,34 @@ namespace StudentProjectCenterSystem
                           .AllowAnyMethod();   // Allow any HTTP method (GET, POST, etc.)
                 });
             });
+
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    BearerFormat = "JWT",
+                    Description = "Enter JWT Bearer token"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] { }
+                    }
+                });
+            });
+
 
             var app = builder.Build();
 

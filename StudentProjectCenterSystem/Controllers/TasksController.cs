@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
@@ -16,13 +17,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         private readonly SignInManager<LocalUser> signInManager;
         private readonly IMapper mapper;
         private readonly ITokenServices tokenServices;
+        private readonly ILogger<AuthRepository> _logger; // Define the logger
 
         public AuthRepository(ApplicationDbContext dbContext,
                               UserManager<LocalUser> userManager,
                               RoleManager<IdentityRole> roleManager,
                               SignInManager<LocalUser> signInManager,
                               IMapper mapper,
-                              ITokenServices tokenServices)
+                              ITokenServices tokenServices,
+                              ILogger<AuthRepository> logger) // Inject the logger
         {
             this.dbContext = dbContext;
             this.userManager = userManager;
@@ -30,6 +33,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             this.signInManager = signInManager;
             this.mapper = mapper;
             this.tokenServices = tokenServices;
+            this._logger = logger;
         }
 
         public bool IsUniqueUser(string email)
@@ -45,6 +49,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             // Check if user exists
             if (user == null)
             {
+                _logger.LogWarning($"Login failed for user with email: {loginRequestDTO.Email}");
                 return new LoginResponseDTO
                 {
                     IsSuccess = false,
@@ -63,8 +68,21 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 };
             }
 
+            // Check if account is locked
+            if (await userManager.IsLockedOutAsync(user))
+            {
+                return new LoginResponseDTO
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Your account is locked. Please try again later."
+                };
+            }
+
             // Retrieve user roles
             var roles = await userManager.GetRolesAsync(user);
+
+            // Optionally log the login attempt for auditing
+            _logger.LogInformation($"User with email {user.Email} logged in successfully.");
 
             // Return success response with user data, token, and roles
             return new LoginResponseDTO

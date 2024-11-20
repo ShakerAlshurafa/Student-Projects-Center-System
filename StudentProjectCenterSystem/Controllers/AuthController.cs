@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
-using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using StudentProjectsCenterSystem.Infrastructure.Repositories;
-using System.Linq.Expressions;
 using System.Web;
 
 namespace StudentProjectsCenterSystem.Controllers
