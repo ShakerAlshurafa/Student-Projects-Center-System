@@ -4,6 +4,7 @@ using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
 using StudentProjectsCenterSystem.Core.IRepositories;
+using System.ComponentModel.DataAnnotations;
 using System.Web;
 
 namespace StudentProjectsCenterSystem.Controllers
@@ -57,8 +58,8 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpPost("auth/request-password-reset")]
-        public async Task<IActionResult> SendEmailForUser(string email)
+        [HttpPost("send-password-reset-link")]
+        public async Task<IActionResult> SendEmailForUser([Required] string email)
         {
             var user = await userManager.FindByEmailAsync(email);
             if (user == null)
@@ -69,7 +70,7 @@ namespace StudentProjectsCenterSystem.Controllers
             var token = await userManager.GeneratePasswordResetTokenAsync(user);
             var resetPasswordLink = Url.Action(
                 "ResetPassword",
-                "Users",
+                "Auth",
                 new { token, email },
                 Request.Scheme
             );

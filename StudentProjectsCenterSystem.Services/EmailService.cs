@@ -13,6 +13,7 @@ namespace StudentProjectsCenterSystem.Services
         {
             this.configuration = configuration;
         }
+
         public async Task SendEmailAsync(string toEmail, string subject, string message)
         {
             if (string.IsNullOrWhiteSpace(toEmail)) throw new ArgumentException("Recipient email address cannot be empty.");
@@ -54,6 +55,8 @@ namespace StudentProjectsCenterSystem.Services
                 }
             }
         }
+
+
     }
 }
 
