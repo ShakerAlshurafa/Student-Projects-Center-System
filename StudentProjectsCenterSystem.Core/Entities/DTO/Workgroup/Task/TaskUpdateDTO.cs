@@ -14,6 +14,6 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup
         //public string Status { get; set; } = string.Empty;
         public DateTime? Start { get; set; }
         public DateTime? End { get; set; }
-        public IFormFile? QuestionFile { get; set; }
+        public List<IFormFile>? QuestionFile { get; set; }
     }
 }

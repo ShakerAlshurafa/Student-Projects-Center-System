@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
@@ -145,6 +146,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
         [HttpPut("change-role")]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<ApiResponse>> ChangeRole([FromQuery, Required] string userId, [FromBody, Required] string newRole)
         {
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(newRole))
