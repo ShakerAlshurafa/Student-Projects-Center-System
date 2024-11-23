@@ -50,6 +50,8 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(IWorkgroupRepository), typeof(WorkgroupRepository));
             builder.Services.AddScoped(typeof(ITaskRepository), typeof(TaskRepository));
 
+            builder.Services.AddScoped<AzureFileUploader>();
+
             builder.Services.AddTransient<IEmailService, EmailService>();
 
             // Tokens used for password reset, email confirmation, or account activation.

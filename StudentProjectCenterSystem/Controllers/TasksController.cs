@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
@@ -7,7 +6,6 @@ using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using StudentProjectsCenterSystem.Infrastructure.Utilities;
 using System.ComponentModel.DataAnnotations;
 
 namespace StudentProjectsCenterSystem.Controllers
@@ -19,12 +17,14 @@ namespace StudentProjectsCenterSystem.Controllers
         private readonly IUnitOfWork<WorkgroupTask> unitOfWork;
         private readonly IMapper mapper;
         private FileDTO file;
+        private readonly AzureFileUploader _uploadHandler;
 
-        public TasksController(IUnitOfWork<WorkgroupTask> unitOfWork, IMapper mapper)
+        public TasksController(IUnitOfWork<WorkgroupTask> unitOfWork, IMapper mapper, AzureFileUploader uploadHandler)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
             file = new FileDTO();
+            _uploadHandler = uploadHandler;
         }
 
 
@@ -79,9 +79,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             if (taskDto.File != null)
             {
-                UploadHandler uploadHandler = new UploadHandler();
-
-                file = await uploadHandler.UploadAsync(taskDto.File);
+                file = await _uploadHandler.UploadAsync(taskDto.File, "resources");
 
                 if (file.ErrorMessage != null)
                 {
@@ -162,8 +160,7 @@ namespace StudentProjectsCenterSystem.Controllers
                     }
                 }
 
-                UploadHandler uploadHandler = new UploadHandler();
-                file = await uploadHandler.UploadAsync(taskDto.QuestionFile);
+                file = await _uploadHandler.UploadAsync(taskDto.QuestionFile, "resources");
 
                 if (file.ErrorMessage != null)
                 {
@@ -265,8 +262,7 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
 
-            UploadHandler uploadHandler = new UploadHandler();
-            var uploadedFile = await uploadHandler.UploadAsync(taskSubmitDTO.File);
+            var uploadedFile = await _uploadHandler.UploadAsync(taskSubmitDTO.File, "submissions");
             if (uploadedFile.ErrorMessage != null)
             {
                 return BadRequest(new ApiResponse(400, uploadedFile.ErrorMessage));
