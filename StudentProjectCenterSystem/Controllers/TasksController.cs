@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
@@ -77,15 +78,24 @@ namespace StudentProjectsCenterSystem.Controllers
             if (taskDto.Start >= taskDto.End)
                 return BadRequest(new ApiResponse(400, "The start date must be earlier than the end date."));
 
+            var uploadedFiles = new List<FileDTO>();
             if (taskDto.File != null)
             {
-                file = await _uploadHandler.UploadAsync(taskDto.File, "resources");
-
-                if (file.ErrorMessage != null)
+                foreach(var file in taskDto.File)
                 {
-                    return BadRequest(new ApiResponse(400, file.ErrorMessage));
-                }
+                    if(file.Length == 0)
+                    {
+                        return BadRequest(new ApiResponse(400, "File is Empty."));
+                    }
+                    var fileDto = await _uploadHandler.UploadAsync(file, "resources");
 
+                    if (fileDto.ErrorMessage != null)
+                    {
+                        return BadRequest(new ApiResponse(400, fileDto.ErrorMessage));
+                    }
+
+                    uploadedFiles.Add(fileDto);
+                }
             }
 
             var task = new WorkgroupTask
@@ -95,7 +105,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 Start = taskDto.Start,
                 End = taskDto.End,
                 WorkgroupId = workgroupId,
-                QuestionFilePath = file.FilePath,
+                QuestionFilePath = uploadedFiles.Select(f => f.FilePath).ToList(),
                 //FileName = file.FileName,
             };
 
@@ -147,27 +157,41 @@ namespace StudentProjectsCenterSystem.Controllers
                 //if (!taskDto.ValidExtensions.Any())
                 //    return BadRequest(new ApiResponse(400, "Valid extensions are required for the file."));
 
-                // Delete the old file if it exists
-                if (!string.IsNullOrEmpty(existingTask.QuestionFilePath) && System.IO.File.Exists(existingTask.QuestionFilePath))
+                var uploadedFiles = new List<FileDTO>();
+                if (taskDto.QuestionFile != null)
                 {
-                    try
+                    foreach (var file in taskDto.QuestionFile)
                     {
-                        System.IO.File.Delete(existingTask.QuestionFilePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        return StatusCode(500, new ApiResponse(500, $"Failed to delete the old file: {ex.Message}"));
+                        if (file.Length == 0)
+                        {
+                            return BadRequest(new ApiResponse(400, "File is Empty."));
+                        }
+
+                        var fileDto = await _uploadHandler.UploadAsync(file, "resources");
+
+                        // Delete the old file if it exists
+                        if (!string.IsNullOrEmpty(fileDto.FilePath) && System.IO.File.Exists(fileDto.FilePath))
+                        {
+                            try
+                            {
+                                System.IO.File.Delete(fileDto.FilePath);
+                            }
+                            catch (Exception ex)
+                            {
+                                return StatusCode(500, new ApiResponse(500, $"Failed to delete the old file: {ex.Message}"));
+                            }
+                        }
+
+                        if (fileDto.ErrorMessage != null)
+                        {
+                            return BadRequest(new ApiResponse(400, fileDto.ErrorMessage));
+                        }
+
+                        uploadedFiles.Add(fileDto);
                     }
                 }
 
-                file = await _uploadHandler.UploadAsync(taskDto.QuestionFile, "resources");
-
-                if (file.ErrorMessage != null)
-                {
-                    return BadRequest(new ApiResponse(400, file.FileName));
-                }
-
-                existingTask.QuestionFilePath = file.FilePath;
+                existingTask.QuestionFilePath = uploadedFiles.Select(f => f.FilePath).ToList();
             }
 
             // Save changes
@@ -242,7 +266,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpPost("{id}/submit-answer")]
         public async Task<ActionResult<ApiResponse>> SubmitAnswer([Required] int id, [FromForm] TaskSubmitDTO taskSubmitDTO)
         {
-            if (taskSubmitDTO == null || taskSubmitDTO.File == null || taskSubmitDTO.File.Length == 0)
+            if (taskSubmitDTO == null || taskSubmitDTO.File == null)
             {
                 return BadRequest(new ApiResponse(400, "A valid file is required."));
             }
@@ -262,14 +286,24 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
 
-            var uploadedFile = await _uploadHandler.UploadAsync(taskSubmitDTO.File, "submissions");
-            if (uploadedFile.ErrorMessage != null)
+            var uploadedFiles = new List<FileDTO>();
+            foreach(var file in taskSubmitDTO.File)
             {
-                return BadRequest(new ApiResponse(400, uploadedFile.ErrorMessage));
+                if (file.Length == 0)
+                {
+                    return BadRequest(new ApiResponse(400, "File is Empty."));
+                }
+
+                var fileDto = await _uploadHandler.UploadAsync(file, "submissions");
+                if (fileDto.ErrorMessage != null)
+                {
+                    return BadRequest(new ApiResponse(400, fileDto.ErrorMessage));
+                }
+                uploadedFiles.Add(fileDto);
             }
 
             // Update task with the submitted file information
-            task.SubmittedFilePath = uploadedFile.FilePath;  // Store the submitted file path
+            task.SubmittedFilePath = uploadedFiles.Select(f => f.FilePath).ToList();  // Store the submitted file path
             task.Status = "Submitted";  // Update task status to Submitted
 
             unitOfWork.taskRepository.Update(task);

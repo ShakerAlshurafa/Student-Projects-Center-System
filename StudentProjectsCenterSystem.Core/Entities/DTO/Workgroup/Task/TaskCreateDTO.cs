@@ -10,6 +10,6 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup
         public DateTime? Start { get; set; }
         public DateTime? End { get; set; }
         //public List<string> ValidExtensions = new List<string>();
-        public IFormFile? File { get; set; } 
+        public List<IFormFile>? File { get; set; } 
     }
 }

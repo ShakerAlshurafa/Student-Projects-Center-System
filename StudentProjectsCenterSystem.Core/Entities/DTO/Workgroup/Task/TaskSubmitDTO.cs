@@ -9,6 +9,6 @@ namespace StudentProjectsCenter.Core.Entities.DTO.Workgroup
 {
     public class TaskSubmitDTO
     {
-        public IFormFile? File { get; set; }
+        public List<IFormFile>? File { get; set; }
     }
 }
