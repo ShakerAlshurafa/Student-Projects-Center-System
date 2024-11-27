@@ -25,6 +25,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.ProjectConfiguration).Assembly);
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.ProjectDetailsSectionConfiguration).Assembly);
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.UserProjectConfiguration).Assembly);
+            builder.ApplyConfigurationsFromAssembly(typeof(Configurations.LocalUserConfiguration).Assembly);
             base.OnModelCreating(builder);
         }
 
