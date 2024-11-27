@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
@@ -7,6 +8,7 @@ using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
+using StudentProjectsCenterSystem.Services;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
@@ -18,6 +20,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         private readonly SignInManager<LocalUser> signInManager;
         private readonly IMapper mapper;
         private readonly ITokenServices tokenServices;
+        private readonly IEmailService emailService;
+        private readonly IHttpContextAccessor httpContextAccessor;
         private readonly ILogger<AuthRepository> _logger; // Define the logger
 
         public AuthRepository(ApplicationDbContext dbContext,
@@ -26,7 +30,10 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                               SignInManager<LocalUser> signInManager,
                               IMapper mapper,
                               ITokenServices tokenServices,
+                              IEmailService emailService,
+                              IHttpContextAccessor httpContextAccessor,
                               ILogger<AuthRepository> logger) // Inject the logger
+                              
         {
             this.dbContext = dbContext;
             this.userManager = userManager;
@@ -34,6 +41,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             this.signInManager = signInManager;
             this.mapper = mapper;
             this.tokenServices = tokenServices;
+            this.emailService = emailService;
+            this.httpContextAccessor = httpContextAccessor;
             this._logger = logger;
         }
 
@@ -55,6 +64,16 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 {
                     IsSuccess = false,
                     ErrorMessage = "Invalid email or password."
+                };
+            }
+
+            // Check if email is confirmed
+            if (!user.EmailConfirmed)
+            {
+                return new LoginResponseDTO
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Please confirm your email before logging in."
                 };
             }
 
@@ -101,7 +120,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             var emailExist = await userManager.FindByEmailAsync(registerationRequestDTO.Email);
             if (emailExist != null)
             {
-                return new ApiResponse(400, "Email is already taken.");
+                return new ApiResponse(400, "This email already exists. Please log in if it belongs to you.");
             }
 
             var user = new LocalUser
@@ -135,11 +154,28 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                         return new ApiValidationResponse(errors, 400);
                     }
 
+                    // Generate confirmation token
+                    var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+
+                    var request = httpContextAccessor?.HttpContext?.Request;
+                    var baseUrl = $"{request?.Scheme}://{request?.Host.Value}";
+
+                    // Create confirmation link
+                    var confirmationLink = $"{baseUrl}/api/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+
+                    var subject = "Email Confirmation";
+                    var message = $"Please confirm your email by clicking the link: {confirmationLink}";
+
+                    // Send confirmation email
+                    await emailService.SendEmailAsync(user.Email, subject, message);
+
+
                     // If everything is successful, commit the transaction
                     await transaction.CommitAsync();
 
                     // Return success response
-                    return new ApiResponse(201, "User registered successfully", result: new LocalUserDTO { UserName = user.UserName, Email = user.Email });
+                    return new ApiResponse(201, "User registered successfully", 
+                            result: new LocalUserDTO { UserName = user.UserName, Email = user.Email });
                 }
                 catch (Exception ex)
                 {

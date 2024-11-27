@@ -29,15 +29,19 @@ namespace StudentProjectsCenterSystem.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await userRepository.Login(model);
-                if (user.User == null)
+                var response = await userRepository.Login(model);
+
+                if (!response.IsSuccess)
                 {
-                    return Unauthorized(new ApiValidationResponse(new List<string>() { "Email or password inCorrect" }, 401));
+                    return Unauthorized(new ApiValidationResponse(new List<string> { response.ErrorMessage ?? "" }, 401));
                 }
-                return Ok(user);
+
+                return Ok(response);
             }
-            return BadRequest(new ApiValidationResponse(new List<string>() { "Please try to enter the email and password correctly" }, 400));
+
+            return BadRequest(new ApiValidationResponse(new List<string> { "Please try to enter the email and password correctly." }, 400));
         }
+
 
 
         [HttpPost("register")]
@@ -54,8 +58,37 @@ namespace StudentProjectsCenterSystem.Controllers
                 return StatusCode(apiResponse.StatusCode ?? 500, apiResponse);
             }
 
-            return Ok(response);
+            return Ok(new
+            {
+                message = "Registration successful. Please check your email to confirm your account.",
+                user = response.Result
+            });
         }
+
+
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+            {
+                return BadRequest(new { message = "UserId and Token are required." });
+            }
+
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            var result = await userManager.ConfirmEmailAsync(user, token);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new { message = "Email confirmation failed.", errors = result.Errors });
+            }
+
+            return Ok(new { message = "Email confirmed successfully. You can now log in." });
+        }
+
 
 
         [HttpPost("send-password-reset-link")]

@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
@@ -44,7 +43,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             // Fetch tasks for the specified workgroup with pagination
             var tasks = await unitOfWork.taskRepository.GetAll(
-                filter: t => t.WorkgroupId == workgroupId,
+                filter: t => t.WorkgroupId == workgroupId, // filter: _ => false, // data corbted
                 page_size: PageSize,
                 page_number: PageNumber);
 
@@ -81,9 +80,9 @@ namespace StudentProjectsCenterSystem.Controllers
             var uploadedFiles = new List<FileDTO>();
             if (taskDto.File != null)
             {
-                foreach(var file in taskDto.File)
+                foreach (var file in taskDto.File)
                 {
-                    if(file.Length == 0)
+                    if (file.Length == 0)
                     {
                         return BadRequest(new ApiResponse(400, "File is Empty."));
                     }
@@ -287,7 +286,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
             var uploadedFiles = new List<FileDTO>();
-            foreach(var file in taskSubmitDTO.File)
+            foreach (var file in taskSubmitDTO.File)
             {
                 if (file.Length == 0)
                 {
