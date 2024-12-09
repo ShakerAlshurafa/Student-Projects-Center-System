@@ -92,7 +92,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpPost("send-password-reset-link")]
-        public async Task<IActionResult> SendEmailForUser([Required] string email)
+        public async Task<IActionResult> SendPasswordResetLink([Required] string email)
         {
             var user = await userManager.FindByEmailAsync(email);
             if (user == null)
@@ -109,15 +109,20 @@ namespace StudentProjectsCenterSystem.Controllers
             );
 
             var subject = "Reset Password Request";
-            var message = $"Please click the following link to reset your password: {resetPasswordLink}";
+            // HTML email body with a button
+            var message = $@"
+                <p>Please click the button below to reset your password:</p>
+                <br>
+                <a href='{resetPasswordLink}' style='display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #007bff; text-decoration: none; border-radius: 5px;'>Reset Password</a>
+                <p>If you did not request a password reset, please ignore this email.</p>";
 
-            await emailService.SendEmailAsync(email, subject, message);
+            await emailService.SendEmailAsync(email, subject, message, isHtml: true);
 
             return Ok(new ApiResponse(200, "Password reset link has been sent. Please check your email."));
         }
 
         [HttpPost("password-reset")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model, string token)
         {
             if (!ModelState.IsValid)
             {
@@ -129,13 +134,13 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiResponse(400, "Passwords do not match."));
             }
 
-            if (string.IsNullOrEmpty(model.Token))
+            if (string.IsNullOrEmpty(token))
             {
                 return BadRequest(new ApiResponse(400, "Invalid or missing token."));
             }
 
             // Decode the token
-            string decodedToken = HttpUtility.UrlDecode(model.Token);
+            string decodedToken = HttpUtility.UrlDecode(token);
 
             var user = await userManager.FindByEmailAsync(model.Email);
             if (user == null)

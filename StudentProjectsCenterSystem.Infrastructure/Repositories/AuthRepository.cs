@@ -164,10 +164,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                     var confirmationLink = $"{baseUrl}/api/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
 
                     var subject = "Email Confirmation";
-                    var message = $"Please confirm your email by clicking the link: {confirmationLink}";
+                    var message = $@"
+                        <p>Please confirm your email by clicking the button below:</p>
+                        <br>
+                        <a href='{confirmationLink}' style='display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #28a745; text-decoration: none; border-radius: 5px;'>Confirm Email</a>
+                        <p>If you did not request this, please ignore this email.</p>";
+
 
                     // Send confirmation email
-                    await emailService.SendEmailAsync(user.Email, subject, message);
+                    await emailService.SendEmailAsync(user.Email, subject, message, isHtml: true);
 
 
                     // If everything is successful, commit the transaction
