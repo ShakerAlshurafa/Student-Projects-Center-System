@@ -14,18 +14,22 @@ namespace StudentProjectsCenterSystem.Services
             this.configuration = configuration;
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string message)
+        public async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false)
         {
             if (string.IsNullOrWhiteSpace(toEmail)) throw new ArgumentException("Recipient email address cannot be empty.");
             if (string.IsNullOrWhiteSpace(subject)) throw new ArgumentException("Subject cannot be empty.");
-            if (string.IsNullOrWhiteSpace(message)) throw new ArgumentException("Message body cannot be empty.");
+            if (string.IsNullOrWhiteSpace(body)) throw new ArgumentException("Message body cannot be empty.");
 
 
             var emailMessage = new MimeMessage();
             emailMessage.From.Add(new MailboxAddress("Student Projects Center", configuration["EmailSettings:FromEmail"]));
             emailMessage.To.Add(new MailboxAddress("", toEmail));
             emailMessage.Subject = subject;
-            emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Text) { Text = message };
+
+            // Determine the content type based on isHtml
+            emailMessage.Body = isHtml
+                ? new TextPart("html") { Text = body }
+                : new TextPart("plain") { Text = body };
 
             using (var client = new SmtpClient())
             {

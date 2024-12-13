@@ -15,7 +15,5 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Authentication
         public string newPassword { get; set; } = string.Empty;
         [Required]
         public string confirmNewPassword { get; set; } = string.Empty;
-        [Required]
-        public string Token { get; set; } = string.Empty;
     }
 }
