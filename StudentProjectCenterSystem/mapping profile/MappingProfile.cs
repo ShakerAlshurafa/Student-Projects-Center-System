@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using StudentProjectsCenter.Core.Entities.Domain.Terms;
+using StudentProjectsCenter.Core.Entities.DTO.Terms;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
@@ -33,6 +35,12 @@ namespace StudentProjectsCenterSystem.mapping_profile
             CreateMap<LocalUser, LocalUserDTO>().ReverseMap();
 
             CreateMap<WorkgroupTask, AllTaskDTO>().ReverseMap();
+
+            CreateMap<TermGroup, TermGroupCreateDTO>().ReverseMap();
+            CreateMap<TermGroup, TermGroupDTO>().ReverseMap();
+            CreateMap<Term, TermUpdateDTO>().ReverseMap();
+
+
         }
 
     }
