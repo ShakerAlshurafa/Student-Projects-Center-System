@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using StudentProjectsCenterSystem.Core.Entities.project;
-using System.Reflection.Emit;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Configurations
 {

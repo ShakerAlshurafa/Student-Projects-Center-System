@@ -1,4 +1,6 @@
-﻿using StudentProjectsCenterSystem.Core.IRepositories;
+﻿using StudentProjectsCenter.Core.IRepositories;
+using StudentProjectsCenter.Infrastructure.Repositories;
+using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
@@ -13,6 +15,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         public IUserRepository userRepository { get; set; }
         public IWorkgroupRepository workgroupRepository { get; set; }
         public ITaskRepository taskRepository { get; set; }
+        public ITermGroupRepository termGroupRepository { get; set; }
+        public ITermRepository termRepository { get; set; }
 
 
         public UnitOfWork(ApplicationDbContext dbContext)
@@ -24,6 +28,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             userRepository = new UserRepository(dbContext);
             workgroupRepository = new WorkgroupRepository(dbContext);
             taskRepository = new TaskRepository(dbContext);
+            termGroupRepository = new TermGroupRepository(dbContext);
+            termRepository = new TermRepository(dbContext);
         }
 
         public async Task<int> save() => await dbContext.SaveChangesAsync();

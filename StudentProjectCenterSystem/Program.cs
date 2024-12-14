@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StudentProjectsCenter.Core.IRepositories;
+using StudentProjectsCenter.Infrastructure.Repositories;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.IRepositories;
@@ -49,6 +51,8 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(IProjectDetailsRepository), typeof(ProjectDetailsRepository));
             builder.Services.AddScoped(typeof(IWorkgroupRepository), typeof(WorkgroupRepository));
             builder.Services.AddScoped(typeof(ITaskRepository), typeof(TaskRepository));
+            builder.Services.AddScoped(typeof(ITermGroupRepository), typeof(TermGroupRepository));
+            builder.Services.AddScoped(typeof(ITermRepository), typeof(TermRepository));
 
             builder.Services.AddScoped<AzureFileUploader>();
 

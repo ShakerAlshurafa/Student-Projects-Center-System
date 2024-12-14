@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using StudentProjectsCenter.Core.Entities.Domain.Terms;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
@@ -26,16 +27,22 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.ProjectDetailsSectionConfiguration).Assembly);
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.UserProjectConfiguration).Assembly);
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.LocalUserConfiguration).Assembly);
+            builder.ApplyConfigurationsFromAssembly(typeof(Configurations.TermsConfiguration).Assembly);
             base.OnModelCreating(builder);
         }
 
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectDetailEntity> ProjectDetails { get; set; }
         public DbSet<ProjectDetailsSection> ProjectDetailsSections { get; set; }
+
         public DbSet<LocalUser> LocalUsers { get; set; }
         public DbSet<UserProject> UserProjects { get; set; }
+
         public DbSet<Workgroup> Workgroups { get; set; }
-        public DbSet<StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.WorkgroupTask> Tasks { get; set; }
+        public DbSet<WorkgroupTask> Tasks { get; set; }
+
+        public DbSet<TermGroup> TermGroups { get; set; }
+        public DbSet<Term> Terms { get; set; }
 
     }
 }
