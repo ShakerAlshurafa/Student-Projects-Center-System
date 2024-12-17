@@ -32,13 +32,13 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpGet("get-users")]
         public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? userName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
-            Expression<Func<LocalUser, bool>> filter = null!;
+            Expression<Func<LocalUser, bool>> filter = x=> x.EmailConfirmed;
             if (!string.IsNullOrEmpty(userName))
             {
-                filter = x => x.UserName.Contains(userName);
+                filter = x => x.UserName.Contains(userName) && x.EmailConfirmed;
             }
 
-            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber);
+            var usersList = await unitOfWork.userRepository.GetAll(filter , PageSize, PageNumber);
 
             var userDTOs = new List<UserDTO>();
 
@@ -60,8 +60,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpGet("get-all-supervisors")]
         public async Task<ActionResult<ApiResponse>> GetSupervisors([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
-            Expression<Func<LocalUser, bool>> filter = x => 
-                x.UserProjects.All(u => u.Role.ToLower() == "supervisor" || u.Role.ToLower() == "co-supervisor");
+            Expression<Func<LocalUser, bool>> filter = null!;
 
             var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber);
 
@@ -69,24 +68,28 @@ namespace StudentProjectsCenterSystem.Controllers
 
             foreach (var user in usersList)
             {
-                userDTOs.Add(new SupervisorDTO
+                var roles = await userManager.GetRolesAsync(user);
+                if (roles.Contains("supervisor"))
                 {
-                    Id = user.Id,
-                    FirstName = user.FirstName,
-                    MiddleName = user.MiddleName,
-                    LastName = user.LastName,
-                    Email = user.Email ?? ""
-                });
+                    userDTOs.Add(new SupervisorDTO
+                    {
+                        Id = user.Id,
+                        FirstName = user.FirstName,
+                        MiddleName = user.MiddleName,
+                        LastName = user.LastName,
+                        Email = user.Email ?? ""
+                    });
+                }
             }
 
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
 
 
-        [HttpGet("get-all-sudents")]
-        public async Task<ActionResult<ApiResponse>> GetSudents([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        [HttpGet("get-all-students")]
+        public async Task<ActionResult<ApiResponse>> GetStudents([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
-            Expression<Func<LocalUser, bool>> filter = x =>
+            Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
                 x.UserProjects.All(u => u.Role.ToLower() == "student");
 
             var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber,"UserProjects.Project");
@@ -117,7 +120,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpGet("get-all-customers")]
         public async Task<ActionResult<ApiResponse>> GetCustomers([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
-            Expression<Func<LocalUser, bool>> filter = x =>
+            Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
                 x.UserProjects.All(u => u.Role.ToLower() == "customer");
 
             var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber, "UserProjects.Project");
