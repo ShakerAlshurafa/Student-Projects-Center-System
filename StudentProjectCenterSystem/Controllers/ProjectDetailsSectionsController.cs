@@ -15,10 +15,10 @@ namespace StudentProjectsCenterSystem.Controllers
     [ApiController]
     public class ProjectDetailsSectionsController : ControllerBase
     {
-        private readonly IUnitOfWork<ProjectDetailsSection> unitOfWork;
+        private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
 
-        public ProjectDetailsSectionsController(IUnitOfWork<ProjectDetailsSection> unitOfWork, IMapper mapper)
+        public ProjectDetailsSectionsController(IUnitOfWork unitOfWork, IMapper mapper)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;

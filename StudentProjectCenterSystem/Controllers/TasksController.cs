@@ -14,12 +14,12 @@ namespace StudentProjectsCenterSystem.Controllers
     [ApiController]
     public class TasksController : ControllerBase
     {
-        private readonly IUnitOfWork<WorkgroupTask> unitOfWork;
+        private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
         private FileDTO file;
         private readonly AzureFileUploader _uploadHandler;
 
-        public TasksController(IUnitOfWork<WorkgroupTask> unitOfWork, IMapper mapper, AzureFileUploader uploadHandler)
+        public TasksController(IUnitOfWork unitOfWork, IMapper mapper, AzureFileUploader uploadHandler)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;

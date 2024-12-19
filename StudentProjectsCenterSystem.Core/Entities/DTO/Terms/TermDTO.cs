@@ -4,7 +4,8 @@ namespace StudentProjectsCenter.Core.Entities.DTO.Terms
 {
     public class TermDTO
     {
-        [Required(ErrorMessage = "Description is required.")]
-        public List<string> Description { get; set; } = new List<string>();
+
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
     }
 }

@@ -6,9 +6,7 @@ using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
-using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using StudentProjectsCenterSystem.Infrastructure.Repositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Security.Claims;
@@ -19,20 +17,20 @@ namespace StudentProjectsCenterSystem.Controllers
     [ApiController]
     public class WorkgroupController : ControllerBase
     {
-        private readonly IUnitOfWork<Workgroup> unitOfWork;
+        private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
 
-        public WorkgroupController(IUnitOfWork<Workgroup> unitOfWork, IMapper mapper)
+        public WorkgroupController(IUnitOfWork unitOfWork, IMapper mapper)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
         }
 
 
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll(
-            [FromQuery] string? workgroupName = null, 
-            [FromQuery] int PageSize = 6, 
+            [FromQuery] string? workgroupName = null,
+            [FromQuery] int PageSize = 6,
              [FromQuery] int PageNumber = 1)
         {
             Expression<Func<Workgroup, bool>> filter = x => true;
@@ -94,7 +92,7 @@ namespace StudentProjectsCenterSystem.Controllers
             Expression<Func<Workgroup, bool>> filter = x =>
                 x.Project.UserProjects.Any(up => up.UserId == userId);
 
-            
+
             var workgroups = await unitOfWork.workgroupRepository.GetAll(filter, pageSize, pageNumber, "Project.UserProjects.User");
 
             if (!workgroups.Any())
@@ -149,14 +147,13 @@ namespace StudentProjectsCenterSystem.Controllers
                                 .FirstOrDefault(u => u.Role == "Customer")?.User.CompanyName ?? string.Empty,
                 Team = userProjects
                         .Where(u => u.Role.ToLower() == "student" && u.User?.UserName != null)
-                        .Select(u => u.User!.UserName!)  
+                        .Select(u => u.User!.UserName!)
                         .ToList() ?? new List<string>()
 
             };
 
             return Ok(new ApiResponse(200, "Workgroup retrieved successfully", workgroupDto));
         }
-
 
     }
 }

@@ -1,9 +1,4 @@
 ﻿using StudentProjectsCenterSystem.Core.Entities.project;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StudentProjectsCenterSystem.Core.Entities.Domain.project
 {
@@ -16,5 +11,10 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.project
         public Project Project { get; set; } = null!;
 
         public string Role { get; set; } = string.Empty;
+
+        public bool IsDeleted { get; set; } = false;
+        public string? DeletedNotes { get; set; }
+        public DateTime? DeletededAt { get; set; }
+        public DateTime? JoinAt { get; set; } = DateTime.UtcNow;
     }
 }
