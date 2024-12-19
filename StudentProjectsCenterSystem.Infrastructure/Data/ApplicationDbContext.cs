@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using StudentProjectsCenter.Core.Entities.Domain;
 using StudentProjectsCenter.Core.Entities.Domain.Terms;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
@@ -27,7 +28,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.ProjectDetailsSectionConfiguration).Assembly);
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.UserProjectConfiguration).Assembly);
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.LocalUserConfiguration).Assembly);
-            builder.ApplyConfigurationsFromAssembly(typeof(Configurations.TermsConfiguration).Assembly);
             base.OnModelCreating(builder);
         }
 
@@ -41,8 +41,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
         public DbSet<Workgroup> Workgroups { get; set; }
         public DbSet<WorkgroupTask> Tasks { get; set; }
 
-        public DbSet<TermGroup> TermGroups { get; set; }
         public DbSet<Term> Terms { get; set; }
 
+        public DbSet<Message> Messages { get; set; }
     }
 }

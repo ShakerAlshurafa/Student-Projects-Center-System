@@ -155,6 +155,34 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("StudentProjectsCenter.Core.Entities.Domain.Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("User")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WorkgroupName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Messages");
+                });
+
             modelBuilder.Entity("StudentProjectsCenter.Core.Entities.Domain.Terms.Term", b =>
                 {
                     b.Property<int>("Id")
@@ -163,30 +191,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("TermGroupId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TermGroupId");
-
-                    b.ToTable("Terms");
-                });
-
-            modelBuilder.Entity("StudentProjectsCenter.Core.Entities.Domain.Terms.TermGroup", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<DateTime?>("LastUpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -194,7 +207,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TermGroups");
+                    b.ToTable("Terms");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>
@@ -226,6 +239,18 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
+
+                    b.Property<string>("DeletedNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletededAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("JoinAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -395,6 +420,12 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ChangeStatusAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangeStatusNotes")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
@@ -405,7 +436,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Property<string>("Overview")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("StartDate")
+                    b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
@@ -505,17 +536,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("StudentProjectsCenter.Core.Entities.Domain.Terms.Term", b =>
-                {
-                    b.HasOne("StudentProjectsCenter.Core.Entities.Domain.Terms.TermGroup", "TermGroup")
-                        .WithMany("Terms")
-                        .HasForeignKey("TermGroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TermGroup");
-                });
-
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>
                 {
                     b.HasOne("StudentProjectsCenterSystem.Core.Entities.project.Project", "Project")
@@ -576,11 +596,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("ProjectDetailsSection");
-                });
-
-            modelBuilder.Entity("StudentProjectsCenter.Core.Entities.Domain.Terms.TermGroup", b =>
-                {
-                    b.Navigation("Terms");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>

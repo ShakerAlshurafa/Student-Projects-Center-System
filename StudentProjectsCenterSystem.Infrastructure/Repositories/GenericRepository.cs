@@ -21,6 +21,22 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             await dbContext.Set<T>().AddAsync(model);
         }
 
+        public async Task<IEnumerable<T>> GetAll(string? includeProperty = null)
+        {
+
+            IQueryable<T> query = dbContext.Set<T>();
+
+            if (!string.IsNullOrEmpty(includeProperty))
+            {
+                foreach (var property in includeProperty.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(property);
+                }
+            }
+
+            return await query.ToListAsync();
+        }
+
         public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>>? filter = null, int page_size = 6, int page_number = 1, string? includeProperty = null)
         {
             if (page_size <= 0)
@@ -103,5 +119,20 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             return false;
         }
 
+        public async Task<bool> IsEmpty(Expression<Func<T, bool>>? filter)
+        {
+            return await dbContext.Set<T>().CountAsync(filter ?? (x => true)) == 0;
+        }
+
+
+        public async Task<int> Count(Expression<Func<T, bool>>? filter)
+        {
+            IQueryable<T> query = dbContext.Set<T>();
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+            return await query.CountAsync();
+        }
     }
 }

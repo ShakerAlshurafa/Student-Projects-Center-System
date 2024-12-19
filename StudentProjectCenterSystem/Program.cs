@@ -13,6 +13,7 @@ using StudentProjectsCenterSystem.Infrastructure.Data;
 using StudentProjectsCenterSystem.Infrastructure.Repositories;
 using StudentProjectsCenterSystem.mapping_profile;
 using StudentProjectsCenterSystem.Services;
+using StudentProjectsCenterSystem.Services.Hubs;
 using System.Text;
 
 namespace StudentProjectCenterSystem
@@ -41,7 +42,7 @@ namespace StudentProjectCenterSystem
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
-            builder.Services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
+            builder.Services.AddScoped(typeof(IUnitOfWork), typeof(UnitOfWork));
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             builder.Services.AddScoped(typeof(IProjectRepository), typeof(ProjectRepository));
             builder.Services.AddScoped(typeof(IAuthRepository), typeof(AuthRepository));
@@ -51,12 +52,16 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped(typeof(IProjectDetailsRepository), typeof(ProjectDetailsRepository));
             builder.Services.AddScoped(typeof(IWorkgroupRepository), typeof(WorkgroupRepository));
             builder.Services.AddScoped(typeof(ITaskRepository), typeof(TaskRepository));
-            builder.Services.AddScoped(typeof(ITermGroupRepository), typeof(TermGroupRepository));
             builder.Services.AddScoped(typeof(ITermRepository), typeof(TermRepository));
+            builder.Services.AddScoped(typeof(IMessageRepository), typeof(MessageRepository));
+            builder.Services.AddScoped(typeof(IChatService), typeof(ChatService));
 
             builder.Services.AddScoped<AzureFileUploader>();
 
             builder.Services.AddTransient<IEmailService, EmailService>();
+
+            builder.Services.AddSignalR();
+
 
             // Tokens used for password reset, email confirmation, or account activation.
             builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
@@ -154,6 +159,9 @@ namespace StudentProjectCenterSystem
             });
 
             var app = builder.Build();
+
+            // Use SignalR
+            app.MapHub<ChatHub>("/chathub");
 
             // Use the CORS policy globally
             app.UseCors("AllowAll");

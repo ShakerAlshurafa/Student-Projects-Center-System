@@ -2,7 +2,7 @@
 
 namespace StudentProjectsCenterSystem.Core.IRepositories
 {
-    public interface IUnitOfWork<T> where T : class
+    public interface IUnitOfWork
     {
         public IProjectRepository projectRepository { get; set; }
         public IProjectDetailsSectionsRepository detailsSectionsRepository { get; set; } // section
@@ -10,8 +10,8 @@ namespace StudentProjectsCenterSystem.Core.IRepositories
         public IUserRepository userRepository { get; set; }
         public IWorkgroupRepository workgroupRepository { get; set; }
         public ITaskRepository taskRepository { get; set; }
-        public ITermGroupRepository termGroupRepository { get; set; }
         public ITermRepository termRepository { get; set; }
+        public IMessageRepository messageRepository { get; set; }
 
 
         public Task<int> save();

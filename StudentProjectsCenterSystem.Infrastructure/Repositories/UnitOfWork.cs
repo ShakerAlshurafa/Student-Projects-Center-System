@@ -5,7 +5,7 @@ using StudentProjectsCenterSystem.Infrastructure.Data;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
-    public class UnitOfWork<T> : IUnitOfWork<T> where T : class
+    public class UnitOfWork : IUnitOfWork
     {
         private readonly ApplicationDbContext dbContext;
 
@@ -15,8 +15,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         public IUserRepository userRepository { get; set; }
         public IWorkgroupRepository workgroupRepository { get; set; }
         public ITaskRepository taskRepository { get; set; }
-        public ITermGroupRepository termGroupRepository { get; set; }
         public ITermRepository termRepository { get; set; }
+        public IMessageRepository messageRepository { get; set; }
 
 
         public UnitOfWork(ApplicationDbContext dbContext)
@@ -28,8 +28,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             userRepository = new UserRepository(dbContext);
             workgroupRepository = new WorkgroupRepository(dbContext);
             taskRepository = new TaskRepository(dbContext);
-            termGroupRepository = new TermGroupRepository(dbContext);
             termRepository = new TermRepository(dbContext);
+            messageRepository = new MessageRepository(dbContext);
         }
 
         public async Task<int> save() => await dbContext.SaveChangesAsync();

@@ -14,12 +14,12 @@ namespace StudentProjectsCenterSystem.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly IUnitOfWork<LocalUser> unitOfWork;
+        private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
         private readonly UserManager<LocalUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
-        public UsersController(IUnitOfWork<LocalUser> unitOfWork, IMapper mapper
+        public UsersController(IUnitOfWork unitOfWork, IMapper mapper
                             , UserManager<LocalUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             this.unitOfWork = unitOfWork;
@@ -29,7 +29,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("get-users")]
+        [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? userName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x=> x.EmailConfirmed;
@@ -57,36 +57,29 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("get-all-supervisors")]
-        public async Task<ActionResult<ApiResponse>> GetSupervisors([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        [HttpGet("supervisors")]
+        public async Task<ActionResult<ApiResponse>> GetSupervisors()
         {
-            Expression<Func<LocalUser, bool>> filter = null!;
-
-            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber);
-
+            var supervisors = await userManager.GetUsersInRoleAsync("supervisor");
             var userDTOs = new List<SupervisorDTO>();
 
-            foreach (var user in usersList)
+            foreach (var user in supervisors)
             {
-                var roles = await userManager.GetRolesAsync(user);
-                if (roles.Contains("supervisor"))
+                userDTOs.Add(new SupervisorDTO
                 {
-                    userDTOs.Add(new SupervisorDTO
-                    {
-                        Id = user.Id,
-                        FirstName = user.FirstName,
-                        MiddleName = user.MiddleName,
-                        LastName = user.LastName,
-                        Email = user.Email ?? ""
-                    });
-                }
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    MiddleName = user.MiddleName,
+                    LastName = user.LastName,
+                    Email = user.Email ?? ""
+                });
             }
 
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
 
 
-        [HttpGet("get-all-students")]
+        [HttpGet("students/active")]
         public async Task<ActionResult<ApiResponse>> GetStudents([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
@@ -117,7 +110,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
         
-        [HttpGet("get-all-customers")]
+        [HttpGet("customers")]
         public async Task<ActionResult<ApiResponse>> GetCustomers([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
@@ -148,51 +141,54 @@ namespace StudentProjectsCenterSystem.Controllers
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
 
-        [HttpPut("change-role")]
-        [Authorize(Roles = "admin")]
-        public async Task<ActionResult<ApiResponse>> ChangeRole([FromQuery, Required] string userId, [FromBody, Required] string newRole)
+
+        [HttpGet("statistics")]
+        public async Task<ActionResult<ApiResponse>> GetStatistics()
         {
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(newRole))
-            {
-                return BadRequest(new ApiResponse(400, "User ID and new role are required."));
-            }
+            var usersCount = await unitOfWork.userRepository.Count(x => x.EmailConfirmed);
+            var usersActiveCount = await unitOfWork.userRepository.Count(x => x.UserProjects.Count > 0);
 
-            // Find the user by ID
-            var user = await userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                return NotFound(new ApiResponse(404, "User not found."));
-            }
+            var supervisors = await userManager.GetUsersInRoleAsync("supervisor");
+            var supervisorsCount = supervisors.Count;
 
-            newRole = newRole.ToLower();
+            var supervisorsActiveCount = await unitOfWork.userRepository.Count(
+                x => x.UserProjects.Count > 0 &&
+                x.UserProjects.All(u => u.Role.ToLower() == "supervisor" && !u.IsDeleted)
+            );
+            var co_supervisorsActiveCount = await unitOfWork.userRepository.Count(
+                x => x.UserProjects.Count > 0 &&
+                x.UserProjects.All(u => u.Role.ToLower() == "co-supervisor" && !u.IsDeleted)
+            );
 
-            // Check if the role exists
-            var roleExists = await roleManager.RoleExistsAsync(newRole);
-            if (!roleExists)
-            {
-                return BadRequest(new ApiResponse(400, $"The role '{newRole}' does not exist."));
-            }
+            var customersCount = await unitOfWork.userRepository.Count(
+                x => x.UserProjects.Count > 0 &&
+                x.UserProjects.All(u => u.Role.ToLower() == "customer" && !u.IsDeleted)
+            );
+            var StudentsCount = await unitOfWork.userRepository.Count(
+                x => x.UserProjects.Count > 0 &&
+                x.UserProjects.All(u => u.Role.ToLower() == "student" && !u.IsDeleted)
+            );
 
-            // Get the current roles of the user
-            var currentRoles = await userManager.GetRolesAsync(user);
+            var projectsActiveCount = await unitOfWork.projectRepository.Count(x => x.Status == "active");
+            var projectsCompletedCount = await unitOfWork.projectRepository.Count(x => x.Status == "completed");
+            var projectsPendingCount = await unitOfWork.projectRepository.Count(x => x.Status == "pending");
 
-            // Remove current roles
-            var removeRolesResult = await userManager.RemoveFromRolesAsync(user, currentRoles);
-            if (!removeRolesResult.Succeeded)
-            {
-                return StatusCode(500, new ApiResponse(500, "Failed to remove current roles."));
-            }
 
-            // Add the new role
-            var addRoleResult = await userManager.AddToRoleAsync(user, newRole);
-            if (!addRoleResult.Succeeded)
-            {
-                return StatusCode(500, new ApiResponse(500, "Failed to add new role."));
-            }
+            return Ok(new ApiResponse(200, result: new {
+                usersCount,
+                usersActiveCount,
 
-            return Ok(new ApiResponse(200, $"Role changed successfully to '{newRole}' for user '{user.UserName}'."));
+                supervisorsCount,
+                supervisorsActiveCount,
+                co_supervisorsActiveCount,
+                customersCount,
+                StudentsCount,
+
+                projectsActiveCount,
+                projectsCompletedCount,
+                projectsPendingCount
+            }));
         }
-
 
     }
 }
