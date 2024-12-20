@@ -57,7 +57,7 @@ namespace StudentProjectsCenter.Controllers.project
 
             if(favoriteProjects == null)
             {
-                return NotFound(new ApiResponse(404, "You don't have any favorite projects yet."))
+                return NotFound(new ApiResponse(404, "You don't have any favorite projects yet."));
             }
 
             return Ok(new ApiResponse(200, result: favoriteProjects));

@@ -116,8 +116,12 @@ namespace StudentProjectsCenterSystem.Controllers
                 <a href='{resetPasswordLink}' style='display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #007bff; text-decoration: none; border-radius: 5px;'>Reset Password</a>
                 <p>If you did not request a password reset, please ignore this email.</p>";
 
-            await emailService.SendEmailAsync(email, subject, message, isHtml: true);
+            var emailSent = await emailService.SendEmailAsync(email, subject, message, isHtml: true);
 
+            if (!emailSent.IsSuccess)
+            {
+                return StatusCode(500, $"An error occurred while sending the message: {emailSent.ErrorMessage}");
+            }
             return Ok(new ApiResponse(200, "Password reset link has been sent. Please check your email."));
         }
 

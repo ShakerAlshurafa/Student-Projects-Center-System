@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
+using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 
 namespace StudentProjectsCenterSystem.Controllers
@@ -79,7 +82,6 @@ namespace StudentProjectsCenterSystem.Controllers
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
 
-
         [HttpGet("supervisors")]
         public async Task<ActionResult<ApiResponse>> GetSupervisors()
         {
@@ -99,6 +101,29 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+        }
+
+
+        [HttpGet("role/{role}")]
+        public async Task<ActionResult<ApiResponse>> GetByRole(string role)
+        {
+            try
+            {
+                var users = await userManager.GetUsersInRoleAsync(role.ToLower());
+
+                if (users == null || !users.Any())
+                {
+                    return NotFound(new ApiResponse(404, "No users found for the given role."));
+                }
+
+                var userDTOs = mapper.Map<List<UserDTO>>(users); // create new dto
+
+                return Ok(new ApiResponse(200, result: userDTOs));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse(500, "An error occurred while fetching users.", ex.Message));
+            }
         }
 
 
@@ -217,6 +242,74 @@ namespace StudentProjectsCenterSystem.Controllers
                 projectsCompletedCount,
                 projectsPendingCount
             }));
+        }
+
+
+        [HttpGet("get-user-info/{userId}")]
+        public async Task<ActionResult<ApiResponse>> GetUserInfo(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest("User ID cannot be null or empty.");
+            }
+
+            var user = await userManager.FindByIdAsync(userId);
+            if(user == null)
+            {
+                return NotFound($"User with ID {userId} not found.");
+            }
+
+            var userInfo = mapper.Map<UserInfoDto>(user);
+
+            var roles = await userManager.GetRolesAsync(user);
+            userInfo.Role = roles.ToList();
+
+            Expression<Func<Project, bool>> filter = x => x.UserProjects.Count > 0 &&
+                x.UserProjects.Any(u => u.UserId == userId);
+
+            var projects = await unitOfWork.projectRepository.GetAll(filter, "UserProjects");
+            var projectsName = projects.Select(projects => projects.Name).ToList();
+
+            userInfo.ProjectsName = projectsName;
+
+            return Ok(new ApiResponse(200, result: userInfo));
+        }
+
+        private string UpdateIfNotNullOrWhiteSpace(string target, string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? target : value;
+        }
+
+        [HttpPut("change-user-info/{userId}")]
+        public async Task<ActionResult<ApiResponse>> UpdateUserInfo(
+            string userId,
+            [FromBody, Required] UpdateUserInfoDTO model)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest("User ID cannot be null or empty.");
+            }
+
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound($"User with ID {userId} not found.");
+            }
+
+            // Update the user's information
+            user.UserName = UpdateIfNotNullOrWhiteSpace(user.UserName ?? "", model.UserName);
+            user.FirstName = UpdateIfNotNullOrWhiteSpace(user.FirstName, model.FirstName);
+            user.MiddleName = UpdateIfNotNullOrWhiteSpace(user.MiddleName ?? "", model.MiddleName);
+            user.LastName = UpdateIfNotNullOrWhiteSpace(user.LastName, model.LastName);
+
+
+            var result = await userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new ApiResponse(200, "User information updated successfully."));
         }
 
     }

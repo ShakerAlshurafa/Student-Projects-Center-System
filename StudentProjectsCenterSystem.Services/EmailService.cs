@@ -1,6 +1,7 @@
 ﻿using MailKit.Net.Smtp;
 using Microsoft.Extensions.Configuration;
 using MimeKit;
+using StudentProjectsCenter.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.IRepositories;
 
 namespace StudentProjectsCenterSystem.Services
@@ -14,7 +15,7 @@ namespace StudentProjectsCenterSystem.Services
             this.configuration = configuration;
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false)
+        public async Task<EmailResult> SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false)
         {
             if (string.IsNullOrWhiteSpace(toEmail)) throw new ArgumentException("Recipient email address cannot be empty.");
             if (string.IsNullOrWhiteSpace(subject)) throw new ArgumentException("Subject cannot be empty.");
@@ -50,9 +51,10 @@ namespace StudentProjectsCenterSystem.Services
                     ).ConfigureAwait(false);
                 
                     await client.SendAsync(emailMessage).ConfigureAwait(false);
+                    return new EmailResult { IsSuccess = true };
                 }
                 catch(Exception ex){
-                    throw new InvalidOperationException("Error sending email", ex);
+                    return new EmailResult { IsSuccess = false, ErrorMessage = ex.Message };
                 }
                 finally{
                     await client.DisconnectAsync(true).ConfigureAwait(false);
