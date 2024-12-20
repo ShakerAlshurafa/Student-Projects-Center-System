@@ -8,7 +8,6 @@ using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
-using StudentProjectsCenterSystem.Services;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
@@ -33,7 +32,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                               IEmailService emailService,
                               IHttpContextAccessor httpContextAccessor,
                               ILogger<AuthRepository> logger) // Inject the logger
-                              
+
         {
             this.dbContext = dbContext;
             this.userManager = userManager;
@@ -172,14 +171,18 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 
 
                     // Send confirmation email
-                    await emailService.SendEmailAsync(user.Email, subject, message, isHtml: true);
+                    var emailSent = await emailService.SendEmailAsync(user.Email, subject, message, isHtml: true);
 
+                    if (!emailSent.IsSuccess)
+                    {
+                        return new ApiResponse(500, $"An error occurred while sending the message: {emailSent.ErrorMessage}");
+                    }
 
                     // If everything is successful, commit the transaction
                     await transaction.CommitAsync();
 
                     // Return success response
-                    return new ApiResponse(201, "User registered successfully", 
+                    return new ApiResponse(201, "User registered successfully",
                             result: new LocalUserDTO { UserName = user.UserName, Email = user.Email });
                 }
                 catch (Exception ex)

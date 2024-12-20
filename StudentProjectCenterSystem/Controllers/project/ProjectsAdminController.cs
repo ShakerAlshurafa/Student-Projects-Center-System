@@ -20,13 +20,11 @@ namespace StudentProjectsCenter.Controllers.project
     public class ProjectsAdminController : ControllerBase
     {
         private readonly IUnitOfWork unitOfWork;
-        private readonly IMapper mapper;
         private readonly UserManager<LocalUser> userManager;
 
-        public ProjectsAdminController(IUnitOfWork unitOfWork, IMapper mapper, UserManager<LocalUser> userManager)
+        public ProjectsAdminController(IUnitOfWork unitOfWork, UserManager<LocalUser> userManager)
         {
             this.unitOfWork = unitOfWork;
-            this.mapper = mapper;
             this.userManager = userManager;
         }
 
