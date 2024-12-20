@@ -91,6 +91,34 @@ namespace StudentProjectsCenter.Controllers
         }
 
 
+        [HttpDelete("{roleId}")]
+        public async Task<ActionResult<ApiResponse>> DeleteRole(string roleId)
+        {
+            var role = await roleManager.FindByIdAsync(roleId);
+
+            if (role == null)
+            {
+                return NotFound(new ApiResponse(404, "Role not found."));
+            }
+
+            if (role.Name == "user" || role.Name == "admin" || role.Name == "supervisor")
+            {
+                return BadRequest(new ApiResponse(400, "Not acceptable to remove this system role."));
+            }
+
+
+            // Proceed with role deletion
+            var result = await roleManager.DeleteAsync(role);
+
+            if (result.Succeeded)
+            {
+                return Ok(new ApiResponse(200, "Role deleted successfully."));
+            }
+
+            return StatusCode(500, new ApiResponse(500, "Failed to delete the role."));
+        }
+
+
         [HttpPost("{roleId}/assign-to-user")]
         public async Task<ActionResult<ApiResponse>> AssignRoleToUser(string roleId, [Required] string userId)
         {
@@ -146,7 +174,10 @@ namespace StudentProjectsCenter.Controllers
             return Ok(new ApiResponse(200, "Role removed from user successfully."));
         }
         
-        
+        /* change role
+         * 
+         * 
+         * 
         [HttpPut("change/{userId}")]
         public async Task<ActionResult<ApiResponse>> ChangeRole(string userId, [FromBody, Required] string newRole)
         {
@@ -186,34 +217,7 @@ namespace StudentProjectsCenter.Controllers
 
             return Ok(new ApiResponse(200, $"Role changed successfully to '{newRole}' for user '{user.UserName}'."));
         }
-
-
-        [HttpDelete("{roleId}")]
-        public async Task<ActionResult<ApiResponse>> DeleteRole(string roleId)
-        {
-            var role = await roleManager.FindByIdAsync(roleId);
-
-            if (role == null)
-            {
-                return NotFound(new ApiResponse(404, "Role not found."));
-            }
-
-            if (role.Name == "user" || role.Name == "admin" || role.Name == "supervisor")
-            {
-                return BadRequest(new ApiResponse(400, "Not acceptable to remove this system role."));
-            }
-
-
-            // Proceed with role deletion
-            var result = await roleManager.DeleteAsync(role);
-
-            if (result.Succeeded)
-            {
-                return Ok(new ApiResponse(200, "Role deleted successfully."));
-            }
-
-            return StatusCode(500, new ApiResponse(500, "Failed to delete the role."));
-        }
+        */
 
 
 

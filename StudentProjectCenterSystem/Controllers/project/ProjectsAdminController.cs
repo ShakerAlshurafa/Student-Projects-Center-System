@@ -9,12 +9,11 @@ using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
-using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 
-namespace StudentProjectsCenterSystem.Controllers.Project
+namespace StudentProjectsCenter.Controllers.project
 {
     [Route("api/admin/projects")]
     [ApiController]
@@ -287,7 +286,7 @@ namespace StudentProjectsCenterSystem.Controllers.Project
 
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse>> Update(int id, [FromBody,Required] UpdateProjectDTO updateProjectDTO)
+        public async Task<ActionResult<ApiResponse>> Update(int id, [FromBody, Required] UpdateProjectDTO updateProjectDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -304,12 +303,12 @@ namespace StudentProjectsCenterSystem.Controllers.Project
                 return NotFound(new ApiResponse(404, "Project not found."));
             }
 
-            if(!updateProjectDTO.Name.IsNullOrEmpty())
+            if (!updateProjectDTO.Name.IsNullOrEmpty())
             {
                 existingProject.Name = updateProjectDTO.Name;
             }
 
-            if(!updateProjectDTO.SupervisorId.IsNullOrEmpty())
+            if (!updateProjectDTO.SupervisorId.IsNullOrEmpty())
             {
                 var newSupervisor = await userManager.FindByIdAsync(updateProjectDTO.SupervisorId);
                 if (newSupervisor == null)
@@ -338,7 +337,7 @@ namespace StudentProjectsCenterSystem.Controllers.Project
                 supervisorEntry.DeletedNotes = updateProjectDTO.ChangeOldSupervisorNotes;
                 supervisorEntry.DeletededAt = DateTime.UtcNow;
 
-                existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.SupervisorId, Role = "supervisor"});
+                existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.SupervisorId, Role = "supervisor" });
             }
 
             if (!updateProjectDTO.CustomerId.IsNullOrEmpty())
@@ -379,6 +378,37 @@ namespace StudentProjectsCenterSystem.Controllers.Project
             return Ok(new ApiResponse(200, "Project updated successfully"));
         }
 
+
+        [HttpPut("favorites/{id}/set")]
+        public async Task<ActionResult<ApiResponse>> UpdateToFavorite(int id)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+                return BadRequest(new ApiValidationResponse(errors));
+            }
+
+            // Find the project by id
+            var existingProject = await unitOfWork.projectRepository.GetById(id);
+            if (existingProject == null)
+            {
+                return NotFound(new ApiResponse(404, "Project not found."));
+            }
+
+            existingProject.Favorite = true;
+
+            unitOfWork.projectRepository.Update(existingProject);
+            int successSave = await unitOfWork.save();
+
+            if (successSave == 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Update Failed"));
+            }
+
+            return Ok(new ApiResponse(200, "Project updated successfully"));
+        }
 
 
         [Authorize(Roles = "admin")]

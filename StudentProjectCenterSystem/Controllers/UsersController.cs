@@ -1,11 +1,9 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 
 namespace StudentProjectsCenterSystem.Controllers
@@ -29,16 +27,13 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
+        // Get all users
         [HttpGet]
-        public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? userName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        public async Task<ActionResult<ApiResponse>> GetAll()
         {
-            Expression<Func<LocalUser, bool>> filter = x=> x.EmailConfirmed;
-            if (!string.IsNullOrEmpty(userName))
-            {
-                filter = x => x.UserName.Contains(userName) && x.EmailConfirmed;
-            }
+            Expression<Func<LocalUser, bool>> filter = x => x.EmailConfirmed;
 
-            var usersList = await unitOfWork.userRepository.GetAll(filter , PageSize, PageNumber);
+            var usersList = await unitOfWork.userRepository.GetAll(filter);
 
             var userDTOs = new List<UserDTO>();
 
@@ -49,7 +44,35 @@ namespace StudentProjectsCenterSystem.Controllers
                 {
                     Id = user.Id,
                     UserName = user.UserName ?? "",
-                    Role = roles.FirstOrDefault() ?? "No Role"
+                    Role = roles.ToList() ?? new List<string> { "No Role" }
+                });
+            }
+
+            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+        }
+
+        // Get limit number of users
+        [HttpGet("{PageNumber}")]
+        public async Task<ActionResult<ApiResponse>> GetWithPagination([FromQuery] string? userName = null, [FromQuery] int PageSize = 6, int PageNumber = 1)
+        {
+            Expression<Func<LocalUser, bool>> filter = x => x.EmailConfirmed;
+            if (!string.IsNullOrEmpty(userName))
+            {
+                filter = x => x.UserName.Contains(userName) && x.EmailConfirmed;
+            }
+
+            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber);
+
+            var userDTOs = new List<UserDTO>();
+
+            foreach (var user in usersList)
+            {
+                var roles = await userManager.GetRolesAsync(user);
+                userDTOs.Add(new UserDTO
+                {
+                    Id = user.Id,
+                    UserName = user.UserName ?? "",
+                    Role = roles.ToList() ?? new List<string> { "No Role" }
                 });
             }
 
@@ -79,22 +102,26 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("students/active")]
+        [HttpGet("students")]
         public async Task<ActionResult<ApiResponse>> GetStudents([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
                 x.UserProjects.All(u => u.Role.ToLower() == "student");
 
-            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber,"UserProjects.Project");
+            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber, "UserProjects.Project");
 
             var userDTOs = new List<StudentDTO>();
 
             foreach (var user in usersList)
             {
-                var workgroupName = user.UserProjects?
+                var project = user.UserProjects?
                     .Where(u => u.UserId == user.Id)
-                    .Select(p => p.Project.Name)
-                    .FirstOrDefault() ?? "";
+                    .Select(p => new
+                    {
+                        p.Project.Status,
+                        p.Project.Name
+                    })
+                    .FirstOrDefault();
 
                 userDTOs.Add(new StudentDTO
                 {
@@ -102,14 +129,15 @@ namespace StudentProjectsCenterSystem.Controllers
                     FirstName = user.FirstName,
                     MiddleName = user.MiddleName,
                     LastName = user.LastName,
-                    Email = user.Email ?? "", // Ensure Email is never null
-                    WorkgroupName = workgroupName
+                    Email = user.Email ?? "",
+                    ProjectName = project?.Name ?? "",
+                    ProjectStatus = project?.Status ?? ""
                 });
             }
 
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
-        
+
         [HttpGet("customers")]
         public async Task<ActionResult<ApiResponse>> GetCustomers([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
@@ -174,7 +202,8 @@ namespace StudentProjectsCenterSystem.Controllers
             var projectsPendingCount = await unitOfWork.projectRepository.Count(x => x.Status == "pending");
 
 
-            return Ok(new ApiResponse(200, result: new {
+            return Ok(new ApiResponse(200, result: new
+            {
                 usersCount,
                 usersActiveCount,
 
