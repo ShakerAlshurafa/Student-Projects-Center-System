@@ -26,7 +26,7 @@ namespace StudentProjectsCenter.Controllers
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> Get()
         {
-            var term = await unitOfWork.termRepository.GetAll();
+            var term = await unitOfWork.termRepository.GetAll(x => true);
             if(term == null || !term.Any())
             {
                 return new ApiResponse(200, "No date found.");

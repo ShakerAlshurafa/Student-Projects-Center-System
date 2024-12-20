@@ -4,6 +4,6 @@
     {
         public string Id { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
+        public List<string> Role { get; set; } = new List<string>();
     }
 }

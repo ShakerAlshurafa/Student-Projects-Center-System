@@ -2,17 +2,17 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using StudentProjectsCenter.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities;
+using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
-using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Security.Claims;
-using StudentProjectsCenter.Core.Entities.DTO.Project;
 
-namespace StudentProjectsCenterSystem.Controllers
+namespace StudentProjectsCenter.Controllers.project
 {
     [Route("api/user/projects")]
     [ApiController]

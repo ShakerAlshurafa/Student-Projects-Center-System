@@ -21,7 +21,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             await dbContext.Set<T>().AddAsync(model);
         }
 
-        public async Task<IEnumerable<T>> GetAll(string? includeProperty = null)
+        public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>>? filter, string? includeProperty = null)
         {
 
             IQueryable<T> query = dbContext.Set<T>();
@@ -32,6 +32,11 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 {
                     query = query.Include(property);
                 }
+            }
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
             }
 
             return await query.ToListAsync();
