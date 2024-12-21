@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Linq.Expressions;
 
 namespace StudentProjectsCenterSystem.Controllers
@@ -34,10 +36,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll()
         {
-            Expression<Func<LocalUser, bool>> filter = x => x.EmailConfirmed;
-
-            var usersList = await unitOfWork.userRepository.GetAll(filter);
-
+            var usersList = await userManager.Users.Where(u => u.EmailConfirmed).ToListAsync();
             var userDTOs = new List<UserDTO>();
 
             foreach (var user in usersList)
@@ -46,7 +45,10 @@ namespace StudentProjectsCenterSystem.Controllers
                 userDTOs.Add(new UserDTO
                 {
                     Id = user.Id,
-                    UserName = user.UserName ?? "",
+                    FullName = string.Join(" ",
+                        new[] { user.FirstName, user.MiddleName, user.LastName }
+                            .Where(name => !string.IsNullOrWhiteSpace(name))),
+                    Email = user.Email ?? "",
                     Role = roles.ToList() ?? new List<string> { "No Role" }
                 });
             }
@@ -55,7 +57,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
         // Get limit number of users
-        [HttpGet("{PageNumber}")]
+        [HttpGet("get-with-pagination")]
         public async Task<ActionResult<ApiResponse>> GetWithPagination([FromQuery] string? userName = null, [FromQuery] int PageSize = 6, int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.EmailConfirmed;
@@ -74,13 +76,17 @@ namespace StudentProjectsCenterSystem.Controllers
                 userDTOs.Add(new UserDTO
                 {
                     Id = user.Id,
-                    UserName = user.UserName ?? "",
+                    FullName = string.Join(" ",
+                        new[] { user.FirstName, user.MiddleName, user.LastName }
+                            .Where(name => !string.IsNullOrWhiteSpace(name))),
+                    Email = user.Email ?? "",
                     Role = roles.ToList() ?? new List<string> { "No Role" }
                 });
             }
 
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
+
 
         [HttpGet("supervisors")]
         public async Task<ActionResult<ApiResponse>> GetSupervisors()
@@ -90,13 +96,18 @@ namespace StudentProjectsCenterSystem.Controllers
 
             foreach (var user in supervisors)
             {
+                Expression<Func<Project, bool>> filter = x => x.UserProjects
+                    .Any(u => u.UserId == user.Id);
+                var projects = await unitOfWork.projectRepository.GetAll(filter, "UserProjects");
+                var projectsName = projects.Select(p => p.Name).ToList();
                 userDTOs.Add(new SupervisorDTO
                 {
                     Id = user.Id,
                     FirstName = user.FirstName,
                     MiddleName = user.MiddleName,
                     LastName = user.LastName,
-                    Email = user.Email ?? ""
+                    Email = user.Email ?? "",
+                    ProjectsName = projectsName,
                 });
             }
 
@@ -116,7 +127,7 @@ namespace StudentProjectsCenterSystem.Controllers
                     return NotFound(new ApiResponse(404, "No users found for the given role."));
                 }
 
-                var userDTOs = mapper.Map<List<UserDTO>>(users); // create new dto
+                var userDTOs = mapper.Map<List<GetByRoleDTO>>(users);
 
                 return Ok(new ApiResponse(200, result: userDTOs));
             }

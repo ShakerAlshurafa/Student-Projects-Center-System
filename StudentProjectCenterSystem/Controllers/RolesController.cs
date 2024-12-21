@@ -174,53 +174,6 @@ namespace StudentProjectsCenter.Controllers
             return Ok(new ApiResponse(200, "Role removed from user successfully."));
         }
         
-        /* change role
-         * 
-         * 
-         * 
-        [HttpPut("change/{userId}")]
-        public async Task<ActionResult<ApiResponse>> ChangeRole(string userId, [FromBody, Required] string newRole)
-        {
-
-            // Find the user by ID
-            var user = await userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                return NotFound(new ApiResponse(404, "User not found."));
-            }
-
-            newRole = newRole.ToLower();
-
-            // Check if the role exists
-            var roleExists = await roleManager.RoleExistsAsync(newRole);
-            if (!roleExists)
-            {
-                return BadRequest(new ApiResponse(400, $"The role '{newRole}' does not exist."));
-            }
-
-            // Get the current roles of the user
-            var currentRoles = await userManager.GetRolesAsync(user);
-
-            // Remove current roles
-            var removeRolesResult = await userManager.RemoveFromRolesAsync(user, currentRoles);
-            if (!removeRolesResult.Succeeded)
-            {
-                return StatusCode(500, new ApiResponse(500, "Failed to remove current roles."));
-            }
-
-            // Add the new role
-            var addRoleResult = await userManager.AddToRoleAsync(user, newRole);
-            if (!addRoleResult.Succeeded)
-            {
-                return StatusCode(500, new ApiResponse(500, "Failed to add new role."));
-            }
-
-            return Ok(new ApiResponse(200, $"Role changed successfully to '{newRole}' for user '{user.UserName}'."));
-        }
-        */
-
-
-
 
     }
 }

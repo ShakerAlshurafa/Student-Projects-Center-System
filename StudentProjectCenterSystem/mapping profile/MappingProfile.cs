@@ -37,6 +37,7 @@ namespace StudentProjectsCenterSystem.mapping_profile
             CreateMap<LocalUser, LocalUserDTO>().ReverseMap();
             CreateMap<LocalUser, UserDTO>().ReverseMap();
             CreateMap<LocalUser, UserInfoDto>().ReverseMap();
+            CreateMap<LocalUser, GetByRoleDTO>().ReverseMap();
 
             CreateMap<WorkgroupTask, AllTaskDTO>().ReverseMap();
 
