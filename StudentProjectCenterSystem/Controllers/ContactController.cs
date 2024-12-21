@@ -27,10 +27,11 @@ namespace StudentProjectsCenter.Controllers
             }
 
             string emailContent = $@"
-                <p><strong>Message:</strong></p>
-                <p>{model.Message}</p>
+                <p><strong>Name:</strong> {model.Name}</p>
                 <p><strong>Email:</strong> {model.Email}</p>
-                <p><strong>Phone:</strong> {model.Phone}</p>";
+                <p><strong>Phone:</strong> {model.Phone}</p>
+                <p><strong>Message:</strong></p>
+                <p>{model.Message}</p>";
 
             // Process the message (e.g., send email, save to the database, etc.)
             var emailSent = await emailService.SendEmailAsync("studentprojectscentersystem@gmail.com", "New Contact Us Message", emailContent, true);

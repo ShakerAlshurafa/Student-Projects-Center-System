@@ -10,6 +10,7 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
 
         public int Progress { get; set; } = 0;
 
