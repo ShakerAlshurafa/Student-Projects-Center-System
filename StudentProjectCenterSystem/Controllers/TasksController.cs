@@ -8,6 +8,8 @@ using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using System.Security.Claims;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
@@ -29,17 +31,28 @@ namespace StudentProjectsCenterSystem.Controllers
             _uploadHandler = uploadHandler;
         }
 
-        [Authorize(Roles = "admin,supervisor")]
-        [HttpGet("all-tasks")]
+        [Authorize(Roles = "supervisor")]
+        [HttpGet("all-supervisor-tasks")]
         public async Task<ActionResult<ApiResponse>> GetAllTasks()
         {
+            var supervisorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(supervisorId))
+            {
+                return Unauthorized(new ApiResponse(401, "Supervisor id not Find."));
+            }
+
+            Expression<Func<WorkgroupTask, bool>> filter = t => t.Workgroup.Project != null &&
+                t.Workgroup.Project.UserProjects
+                    .Any(u => u.Role == "supervisor" && u.UserId == supervisorId);
+
             // Fetch tasks for the specified workgroup with pagination
-            var tasks = await unitOfWork.taskRepository.GetAll(filter: t => true, "Workgroup");
+            var tasks = await unitOfWork.taskRepository.GetAll(filter: filter, "Workgroup.Project.UserProjects");
 
             // Check if tasks are available
             if (tasks == null || !tasks.Any())
             {
-                return Ok(new ApiResponse(200, "No tasks found for the specified workgroup."));
+                return Ok(new ApiResponse(200, "No tasks found."));
             }
 
             var taskDto = mapper.Map<List<AllTaskDTO>>(tasks);
@@ -48,7 +61,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("all-tasks/{workgroupId}")]
+        [HttpGet("all-workgroup-tasks/{workgroupId}")]
         public async Task<ActionResult<ApiResponse>> GetAllTasksForWorkgroup(int workgroupId)
         {
             // Validate workgroup existence
