@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
@@ -31,7 +32,7 @@ namespace StudentProjectsCenterSystem.Controllers
         public async Task<ActionResult<ApiResponse>> GetAll(
             [FromQuery] string? workgroupName = null,
             [FromQuery] int PageSize = 6,
-             [FromQuery] int PageNumber = 1)
+            [FromQuery] int PageNumber = 1)
         {
             Expression<Func<Workgroup, bool>> filter = x => true;
             if (!string.IsNullOrEmpty(workgroupName))
@@ -143,7 +144,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 return NotFound(new ApiResponse(404, "Workgroup not found."));
             }
 
-            var role = "You are not in this group";
+            var role = "";
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if(userId != null)
             {
@@ -154,25 +155,53 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             var userProjects = workgroup.Project?.UserProjects ?? new List<UserProject>();
-            var customer = userProjects.FirstOrDefault(u => u.Role == "customer");
 
+            var supervisor = userProjects.FirstOrDefault(u => u.Role == "supervisor")?.User;
+            var co_supervisor = userProjects.FirstOrDefault(u => u.Role == "co-supervisor")?.User;
+            var customer = userProjects.FirstOrDefault(u => u.Role == "customer")?.User;
+            var students = userProjects
+                        .Where(u => u.Role == "student")
+                        .Select(u => new WorkgroupUsersDTO(){
+                            FullName= string.Join(" ", [u?.User.FirstName, u?.User.MiddleName, u?.User.LastName]),
+                            Email = u?.User.Email ?? "",
+                            Role = u?.Role ?? ""
+                        })
+                        .ToList() ?? new List<WorkgroupUsersDTO>();
+
+            var members = new List<WorkgroupUsersDTO>()
+            {
+                new WorkgroupUsersDTO{
+                    FullName = string.Join(" ", [supervisor?.FirstName, supervisor?.MiddleName, supervisor?.LastName]),
+                    Email = supervisor?.Email ?? "",
+                    Role = "supervisor"
+                },
+                new WorkgroupUsersDTO
+                {
+                    FullName = string.Join(" ", [customer?.FirstName, customer?.MiddleName, customer?.LastName]),
+                    Email = customer?.Email ?? "",
+                    Role = "customer"
+                },
+            };
+            foreach(var student in students)
+            {
+                members.Add(student);
+            }
+            if(co_supervisor != null)
+            {
+                members.Add(new WorkgroupUsersDTO
+                {
+                    FullName = string.Join(" ", [co_supervisor?.FirstName, co_supervisor?.MiddleName, co_supervisor?.LastName]),
+                    Email = co_supervisor?.Email ?? "",
+                    Role = "co_supervisor"
+                });
+            }
             var workgroupDto = new WorkgroupDTO
             {
                 Id = workgroup.Id,
                 Name = workgroup.Name,
-                Role = role ?? "You are not in this group",
+                Role = (role == "" ? null : role),
                 Progress = workgroup.Progress,
-                SupervisorName = userProjects
-                                .FirstOrDefault(u => u.Role == "supervisor")?.User.UserName ?? string.Empty,
-                CoSupervisorName = userProjects
-                                .FirstOrDefault(u => u.Role == "co-supervisor")?.User.UserName,
-                CustomerName = customer?.User.UserName ?? string.Empty,
-                Company = customer?.User.CompanyName ?? string.Empty,
-                Team = userProjects
-                        .Where(u => u.Role == "student" && u.User?.UserName != null)
-                        .Select(u => u.User!.UserName!)
-                        .ToList() ?? new List<string>()
-
+                Members = members.ToList()
             };
 
             return Ok(new ApiResponse(200, "Workgroup retrieved successfully", workgroupDto));
