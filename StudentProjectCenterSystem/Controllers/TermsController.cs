@@ -75,7 +75,7 @@ namespace StudentProjectsCenter.Controllers
         }
 
         [HttpPut]
-        public async Task<ActionResult<ApiResponse>> Update([Required] int id, [FromBody, Required] TermDTO termDTO)
+        public async Task<ActionResult<ApiResponse>> Update([Required] int id, [FromBody, Required] TermUpdateDTO termDTO)
         {
             if (!ModelState.IsValid)
             {

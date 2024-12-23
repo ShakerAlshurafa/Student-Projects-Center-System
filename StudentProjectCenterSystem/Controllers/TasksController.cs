@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
@@ -10,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
+    [Authorize]
     [Route("api/tasks")]
     [ApiController]
     public class TasksController : ControllerBase
@@ -27,25 +29,12 @@ namespace StudentProjectsCenterSystem.Controllers
             _uploadHandler = uploadHandler;
         }
 
-
+        [Authorize(Roles = "admin,supervisor")]
         [HttpGet("all-tasks")]
-        public async Task<ActionResult<ApiResponse>> GetAllTasks(
-            [Required] int workgroupId,
-            [FromQuery] int PageSize = 6,
-            [FromQuery] int PageNumber = 1)
+        public async Task<ActionResult<ApiResponse>> GetAllTasks()
         {
-            // Validate workgroup existence
-            var workgroupExists = await unitOfWork.workgroupRepository.IsExist(workgroupId);
-            if (!workgroupExists)
-            {
-                return NotFound(new ApiResponse(404, "Workgroup not found."));
-            }
-
             // Fetch tasks for the specified workgroup with pagination
-            var tasks = await unitOfWork.taskRepository.GetAll(
-                filter: t => t.WorkgroupId == workgroupId, // filter: _ => false, // data corbted
-                page_size: PageSize,
-                page_number: PageNumber);
+            var tasks = await unitOfWork.taskRepository.GetAll(filter: t => true, "Workgroup");
 
             // Check if tasks are available
             if (tasks == null || !tasks.Any())
@@ -59,9 +48,33 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
+        [HttpGet("all-tasks/{workgroupId}")]
+        public async Task<ActionResult<ApiResponse>> GetAllTasksForWorkgroup(int workgroupId)
+        {
+            // Validate workgroup existence
+            var workgroupExists = await unitOfWork.workgroupRepository.IsExist(workgroupId);
+            if (!workgroupExists)
+            {
+                return NotFound(new ApiResponse(404, "Workgroup not found."));
+            }
 
-        [HttpPost("workgroupId")]
-        public async Task<ActionResult<ApiResponse>> Create([Required] int workgroupId, [FromForm] TaskCreateDto taskDto)
+            // Fetch tasks for the specified workgroup with pagination
+            var tasks = await unitOfWork.taskRepository.GetAll(filter: t => t.WorkgroupId == workgroupId );
+
+            // Check if tasks are available
+            if (tasks == null || !tasks.Any())
+            {
+                return Ok(new ApiResponse(200, "No tasks found for the specified workgroup."));
+            }
+
+            var taskDto = mapper.Map<List<AllWorkgroupTaskDTO>>(tasks);
+
+            return Ok(new ApiResponse(200, "Tasks retrieved successfully.", taskDto));
+        }
+
+        [Authorize(Roles = "supervisor")]
+        [HttpPost("{workgroupId}")]
+        public async Task<ActionResult<ApiResponse>> Create(int workgroupId, [FromForm] TaskCreateDto taskDto)
         {
             if (taskDto == null)
                 return BadRequest(new ApiResponse(400, "Task data is required."));
@@ -119,7 +132,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return CreatedAtAction(nameof(Create), new { id = task.Id }, new ApiResponse(201, "Task created successfully", result: task));
         }
 
-
+        [Authorize(Roles = "supervisor")]
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(int id, [FromForm] TaskUpdateDTO taskDto)
         {
@@ -193,6 +206,8 @@ namespace StudentProjectsCenterSystem.Controllers
                 existingTask.QuestionFilePath = uploadedFiles.Select(f => f.FilePath).ToList();
             }
 
+            existingTask.LastUpdatedAt = DateTime.UtcNow;
+
             // Save changes
             unitOfWork.taskRepository.Update(existingTask);
             int successSave = await unitOfWork.save();
@@ -221,6 +236,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 Description = task.Description,
                 Start = task.Start,
                 End = task.End,
+                LastUpdatedAt = task.LastUpdatedAt,
                 QuestionFilePath = task.QuestionFilePath,
                 SubmittedFilePath = task.SubmittedFilePath,
                 //FileName = task.FileName,
@@ -230,7 +246,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, result: taskDto));
         }
 
-
+        [Authorize(Roles = "supervisor")]
         [HttpPut("{id}/change-status")]
         public async Task<ActionResult<ApiResponse>> ChangeStatus([Required] int id, [Required, FromBody] string status)
         {
@@ -260,7 +276,6 @@ namespace StudentProjectsCenterSystem.Controllers
 
             return Ok(new ApiResponse(200, "Task status updated successfully.", result: status));
         }
-
 
         [HttpPost("{id}/submit-answer")]
         public async Task<ActionResult<ApiResponse>> SubmitAnswer([Required] int id, [FromForm] TaskSubmitDTO taskSubmitDTO)
@@ -305,6 +320,8 @@ namespace StudentProjectsCenterSystem.Controllers
             task.SubmittedFilePath = uploadedFiles.Select(f => f.FilePath).ToList();  // Store the submitted file path
             task.Status = "Submitted";  // Update task status to Submitted
 
+            task.SubmittedAt = DateTime.UtcNow;
+
             unitOfWork.taskRepository.Update(task);
             int successSave = await unitOfWork.save();
             if (successSave == 0)
@@ -315,7 +332,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "File submitted successfully.", result: task.SubmittedFilePath));
         }
 
-
+        [Authorize(Roles = "supervisor")]
         [HttpDelete]
         public async Task<ActionResult<ApiResponse>> Delete([Required] int id)
         {

@@ -6,7 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StudentProjectsCenter.Core.IRepositories;
 using StudentProjectsCenter.Infrastructure.Repositories;
+using StudentProjectsCenter.Services;
 using StudentProjectsCenterSystem.Core.Entities;
+using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
@@ -23,6 +25,14 @@ namespace StudentProjectCenterSystem
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // Register services
+            builder.Services.AddScoped<IStatusUpdater<WorkgroupTask>, StatusUpdater<WorkgroupTask>>(); // Register IStatusUpdater
+            builder.Services.AddScoped<StatusUpdateService>(); // Register StatusUpdateService
+
+            // Register the background service to run automatically
+            builder.Services.AddHostedService<StatusUpdateBackgroundService>();
+
 
             // Add services to the container.
 
@@ -61,7 +71,6 @@ namespace StudentProjectCenterSystem
             builder.Services.AddTransient<IEmailService, EmailService>();
 
             builder.Services.AddSignalR();
-
 
             // Tokens used for password reset, email confirmation, or account activation.
             builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>

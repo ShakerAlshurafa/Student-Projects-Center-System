@@ -21,9 +21,13 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
             Approved: Task submission has been reviewed and accepted.
             Rejected: Task submission has been reviewed and requires changes or adjustments.
             Canceled: Task is no longer needed and has been closed.
+            Overdue:
         */
-        public DateTime? Start { get; set; } 
+        
+        public DateTime? Start { get; set; }
         public DateTime? End { get; set; }
+        public DateTime? LastUpdatedAt { get; set; }
+        public DateTime? SubmittedAt { get; set; }
 
         //public List<string> ValidExtensions = new List<string>();
 

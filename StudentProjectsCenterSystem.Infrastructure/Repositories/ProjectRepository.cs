@@ -46,11 +46,13 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 Name = project?.Name ?? "",
                 Overview = project?.Overview ?? "",
                 Status = project?.Status ?? "",
-                ProjectDetails = details.Select(d => new ProjectDetailEntityDTO
-                {
-                    detail = d,
-                    SectionName = d?.ProjectDetailsSection?.Name ?? ""
-                }),
+                ProjectDetails = details
+                    .GroupBy(d => d?.ProjectDetailsSection?.Name ?? string.Empty)
+                    .Select(group => new ProjectDetailEntityDTO
+                    {
+                        SectionName = group.Key,
+                        details = group.ToList()
+                    }).ToList(),
 
                 SupervisorJoinAt = supervisor?.JoinAt,
                 SupervisorId = supervisor?.UserId ?? "",
