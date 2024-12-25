@@ -59,7 +59,7 @@ namespace StudentProjectsCenter.Controllers.project
         }
 
 
-
+        [Authorize(Roles = "supervisor,admin")]
         [HttpPost("students")]
         public async Task<ActionResult<ApiResponse>> AddStudent([Required] int projectId, [Required] CreateStudentDTO students)
         {
