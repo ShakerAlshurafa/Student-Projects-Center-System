@@ -74,8 +74,8 @@ namespace StudentProjectsCenter.Controllers
             return CreatedAtAction(nameof(Create), new { id = term.Id }, new ApiResponse(201, result: term));
         }
 
-        [HttpPut]
-        public async Task<ActionResult<ApiResponse>> Update([Required] int id, [FromBody, Required] TermUpdateDTO termDTO)
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ApiResponse>> Update(int id, [FromBody, Required] TermUpdateDTO termDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -117,8 +117,8 @@ namespace StudentProjectsCenter.Controllers
             return Ok(new ApiResponse(200, "Term updated successfully"));
         }
 
-        [HttpDelete]
-        public async Task<ActionResult<ApiResponse>> Delete([Required] int id)
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<ApiResponse>> Delete(int id)
         {
             int successDelete = unitOfWork.termRepository.Delete(id);
             if (successDelete == 0)

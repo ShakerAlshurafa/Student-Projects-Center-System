@@ -13,7 +13,7 @@ using System.Security.Claims;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/tasks")]
     [ApiController]
     public class TasksController : ControllerBase
@@ -33,7 +33,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [Authorize(Roles = "supervisor")]
         [HttpGet("all-supervisor-tasks")]
-        public async Task<ActionResult<ApiResponse>> GetAllTasks()
+        public async Task<ActionResult<ApiResponse>> GetAllSupervisorTasks()
         {
             var supervisorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -62,7 +62,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpGet("all-workgroup-tasks/{workgroupId}")]
-        public async Task<ActionResult<ApiResponse>> GetAllTasksForWorkgroup(int workgroupId)
+        public async Task<ActionResult<ApiResponse>> GetAllWorkgroupTasks(int workgroupId)
         {
             // Validate workgroup existence
             var workgroupExists = await unitOfWork.workgroupRepository.IsExist(workgroupId);

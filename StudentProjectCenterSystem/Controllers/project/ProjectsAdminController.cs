@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenter.Core.Entities.DTO.Project;
+using StudentProjectsCenter.Core.IRepositories;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
+using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
@@ -20,11 +22,16 @@ namespace StudentProjectsCenter.Controllers.project
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly UserManager<LocalUser> userManager;
+        private readonly IChatService chatService;
 
-        public ProjectsAdminController(IUnitOfWork unitOfWork, UserManager<LocalUser> userManager)
+        public ProjectsAdminController(
+            IUnitOfWork unitOfWork,
+            UserManager<LocalUser> userManager,
+            IChatService chatService)
         {
             this.unitOfWork = unitOfWork;
             this.userManager = userManager;
+            this.chatService = chatService;
         }
 
 
@@ -136,7 +143,7 @@ namespace StudentProjectsCenter.Controllers.project
             };
 
             // Create the project object
-            var model = new StudentProjectsCenterSystem.Core.Entities.project.Project
+            var model = new Project
             {
                 Name = project.Name,
                 StartDate = DateTime.Now,
@@ -303,6 +310,8 @@ namespace StudentProjectsCenter.Controllers.project
             if (!updateProjectDTO.Name.IsNullOrEmpty())
             {
                 existingProject.Name = updateProjectDTO.Name;
+                if (existingProject.Workgroup != null)
+                    existingProject.Workgroup.Name = updateProjectDTO.Name + " " + "Workgroup";
             }
 
             if (!updateProjectDTO.SupervisorId.IsNullOrEmpty())
@@ -376,8 +385,8 @@ namespace StudentProjectsCenter.Controllers.project
         }
 
 
-        [HttpPut("favorites/{id}/set")]
-        public async Task<ActionResult<ApiResponse>> UpdateToFavorite(int id)
+        [HttpPut("favorites/{id}/toggle")]
+        public async Task<ActionResult<ApiResponse>> UpdateToggleFavorite(int id)
         {
             if (!ModelState.IsValid)
             {
@@ -394,7 +403,7 @@ namespace StudentProjectsCenter.Controllers.project
                 return NotFound(new ApiResponse(404, "Project not found."));
             }
 
-            existingProject.Favorite = true;
+            existingProject.Favorite = !existingProject.Favorite;
 
             unitOfWork.projectRepository.Update(existingProject);
             int successSave = await unitOfWork.save();
