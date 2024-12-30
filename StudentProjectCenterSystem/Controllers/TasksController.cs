@@ -87,13 +87,28 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [Authorize(Roles = "supervisor")]
         [HttpPost("{workgroupId}")]
-        public async Task<ActionResult<ApiResponse>> Create(int workgroupId, [FromForm] TaskCreateDto taskDto)
+        public async Task<ActionResult<ApiResponse>> Create(int workgroupId, [FromForm, Required] TaskCreateDTO taskDto)
         {
-            if (taskDto == null)
-                return BadRequest(new ApiResponse(400, "Task data is required."));
-
             //if (!taskDto.ValidExtensions.Any())
             //    return BadRequest(new ApiResponse(400, "Valid extensions are required."));
+
+            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId);
+            if (workgroup == null)
+            {
+                return NotFound($"Workgroup with ID {workgroupId} was not found.");
+            }
+
+            var countCompleteTasks = await unitOfWork.taskRepository.Count(t => t.Status.ToLower() == "complete");
+            var countAllTasks = await unitOfWork.taskRepository.Count();
+
+            if (countAllTasks == 0)
+            {
+                workgroup.Progress = 0;
+            }
+            else
+            {
+                workgroup.Progress = (countCompleteTasks / countAllTasks) * 100;
+            }
 
             // Check if dates are in the future
             if (taskDto.Start < DateTime.UtcNow || taskDto.End < DateTime.UtcNow)
@@ -130,10 +145,11 @@ namespace StudentProjectsCenterSystem.Controllers
                 Start = taskDto.Start,
                 End = taskDto.End,
                 WorkgroupId = workgroupId,
-                QuestionFilePath = uploadedFiles.Select(f => f.FilePath).ToList(),
-                //FileName = file.FileName,
+                QuestionFilePath = uploadedFiles.Select(f => f.FilePath).ToList()
             };
 
+
+            unitOfWork.workgroupRepository.Update(workgroup);
             await unitOfWork.taskRepository.Create(task);
 
             int successSave = await unitOfWork.save();
@@ -144,6 +160,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             return CreatedAtAction(nameof(Create), new { id = task.Id }, new ApiResponse(201, "Task created successfully", result: task));
         }
+
 
         [Authorize(Roles = "supervisor")]
         [HttpPut("{id}")]
@@ -276,11 +293,34 @@ namespace StudentProjectsCenterSystem.Controllers
                 return NotFound(new ApiResponse(404, "Task not found."));
             }
 
-            // Update the status
-            existingTask.Status = status;
+            if(existingTask.Status.ToLower() == "complete" || status.ToLower() == "complete")
+            {
+                var workgroup = await unitOfWork.workgroupRepository.GetById(existingTask.WorkgroupId);
+                if (workgroup == null)
+                {
+                    return NotFound($"Workgroup with ID {existingTask.WorkgroupId} was not found.");
+                }
 
-            // Save the updated task
-            unitOfWork.taskRepository.Update(existingTask);
+                var countCompleteTasks = await unitOfWork.taskRepository.Count(t => t.Status.ToLower() == "complete");
+                var countAllTasks = await unitOfWork.taskRepository.Count();
+
+                if (countAllTasks == 0)
+                {
+                    workgroup.Progress = 0;
+                }
+                else
+                {
+                    workgroup.Progress = (int)(((double)countCompleteTasks / countAllTasks) * 100);
+                }
+
+                unitOfWork.workgroupRepository.Update(workgroup); // Save the updated workgroup         
+            }
+
+            // Update the status
+            existingTask.Status = status.ToLower();
+
+            unitOfWork.taskRepository.Update(existingTask); // Save the updated task
+
             int successSave = await unitOfWork.save();
             if (successSave == 0)
             {

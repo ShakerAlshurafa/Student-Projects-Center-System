@@ -1,0 +1,169 @@
+[1mdiff --git a/.vs/ProjectEvaluation/studentprojectcentersystem.projects.v7.bin b/.vs/ProjectEvaluation/studentprojectcentersystem.projects.v7.bin[m
+[1mindex f8e1dfc..631e280 100644[m
+Binary files a/.vs/ProjectEvaluation/studentprojectcentersystem.projects.v7.bin and b/.vs/ProjectEvaluation/studentprojectcentersystem.projects.v7.bin differ
+[1mdiff --git a/.vs/StudentProjectCenterSystem/DesignTimeBuild/.dtbcache.v2 b/.vs/StudentProjectCenterSystem/DesignTimeBuild/.dtbcache.v2[m
+[1mindex 0701f3e..a3006e5 100644[m
+Binary files a/.vs/StudentProjectCenterSystem/DesignTimeBuild/.dtbcache.v2 and b/.vs/StudentProjectCenterSystem/DesignTimeBuild/.dtbcache.v2 differ
+[1mdiff --git a/.vs/StudentProjectCenterSystem/v17/.futdcache.v2 b/.vs/StudentProjectCenterSystem/v17/.futdcache.v2[m
+[1mindex f0b62d5..3b7fb56 100644[m
+Binary files a/.vs/StudentProjectCenterSystem/v17/.futdcache.v2 and b/.vs/StudentProjectCenterSystem/v17/.futdcache.v2 differ
+[1mdiff --git a/.vs/StudentProjectCenterSystem/v17/.suo b/.vs/StudentProjectCenterSystem/v17/.suo[m
+[1mindex dbb49e9..b8b8610 100644[m
+Binary files a/.vs/StudentProjectCenterSystem/v17/.suo and b/.vs/StudentProjectCenterSystem/v17/.suo differ
+[1mdiff --git a/StudentProjectCenterSystem/Controllers/TasksController.cs b/StudentProjectCenterSystem/Controllers/TasksController.cs[m
+[1mindex 6e9d45d..572872d 100644[m
+[1m--- a/StudentProjectCenterSystem/Controllers/TasksController.cs[m
+[1m+++ b/StudentProjectCenterSystem/Controllers/TasksController.cs[m
+[36m@@ -87,14 +87,29 @@[m [mnamespace StudentProjectsCenterSystem.Controllers[m
+ [m
+         [Authorize(Roles = "supervisor")][m
+         [HttpPost("{workgroupId}")][m
+[31m-        public async Task<ActionResult<ApiResponse>> Create(int workgroupId, [FromForm] TaskCreateDto taskDto)[m
+[32m+[m[32m        public async Task<ActionResult<ApiResponse>> Create(int workgroupId, [FromForm, Required] TaskCreateDTO taskDto)[m
+         {[m
+[31m-            if (taskDto == null)[m
+[31m-                return BadRequest(new ApiResponse(400, "Task data is required."));[m
+[31m-[m
+             //if (!taskDto.ValidExtensions.Any())[m
+             //    return BadRequest(new ApiResponse(400, "Valid extensions are required."));[m
+ [m
+[32m+[m[32m            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId);[m
+[32m+[m[32m            if (workgroup == null)[m
+[32m+[m[32m            {[m
+[32m+[m[32m                return NotFound($"Workgroup with ID {workgroupId} was not found.");[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            var countCompleteTasks = await unitOfWork.taskRepository.Count(t => t.Status.ToLower() == "complete");[m
+[32m+[m[32m            var countAllTasks = await unitOfWork.taskRepository.Count();[m
+[32m+[m
+[32m+[m[32m            if (countAllTasks == 0)[m
+[32m+[m[32m            {[m
+[32m+[m[32m                workgroup.Progress = 0;[m
+[32m+[m[32m            }[m
+[32m+[m[32m            else[m
+[32m+[m[32m            {[m
+[32m+[m[32m                workgroup.Progress = (countCompleteTasks / countAllTasks) * 100;[m
+[32m+[m[32m            }[m
+[32m+[m
+             // Check if dates are in the future[m
+             if (taskDto.Start < DateTime.UtcNow || taskDto.End < DateTime.UtcNow)[m
+                 return BadRequest(new ApiResponse(400, "Dates must not be in the past."));[m
+[36m@@ -130,10 +145,11 @@[m [mnamespace StudentProjectsCenterSystem.Controllers[m
+                 Start = taskDto.Start,[m
+                 End = taskDto.End,[m
+                 WorkgroupId = workgroupId,[m
+[31m-                QuestionFilePath = uploadedFiles.Select(f => f.FilePath).ToList(),[m
+[31m-                //FileName = file.FileName,[m
+[32m+[m[32m                QuestionFilePath = uploadedFiles.Select(f => f.FilePath).ToList()[m
+             };[m
+ [m
+[32m+[m
+[32m+[m[32m            unitOfWork.workgroupRepository.Update(workgroup);[m
+             await unitOfWork.taskRepository.Create(task);[m
+ [m
+             int successSave = await unitOfWork.save();[m
+[36m@@ -145,6 +161,7 @@[m [mnamespace StudentProjectsCenterSystem.Controllers[m
+             return CreatedAtAction(nameof(Create), new { id = task.Id }, new ApiResponse(201, "Task created successfully", result: task));[m
+         }[m
+ [m
+[32m+[m
+         [Authorize(Roles = "supervisor")][m
+         [HttpPut("{id}")][m
+         public async Task<ActionResult<ApiResponse>> Update(int id, [FromForm] TaskUpdateDTO taskDto)[m
+[36m@@ -276,11 +293,34 @@[m [mnamespace StudentProjectsCenterSystem.Controllers[m
+                 return NotFound(new ApiResponse(404, "Task not found."));[m
+             }[m
+ [m
+[32m+[m[32m            if(existingTask.Status.ToLower() == "complete" || status.ToLower() == "complete")[m
+[32m+[m[32m            {[m
+[32m+[m[32m                var workgroup = await unitOfWork.workgroupRepository.GetById(existingTask.WorkgroupId);[m
+[32m+[m[32m                if (workgroup == null)[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    return NotFound($"Workgroup with ID {existingTask.WorkgroupId} was not found.");[m
+[32m+[m[32m                }[m
+[32m+[m
+[32m+[m[32m                var countCompleteTasks = await unitOfWork.taskRepository.Count(t => t.Status.ToLower() == "complete");[m
+[32m+[m[32m                var countAllTasks = await unitOfWork.taskRepository.Count();[m
+[32m+[m
+[32m+[m[32m                if (countAllTasks == 0)[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    workgroup.Progress = 0;[m
+[32m+[m[32m                }[m
+[32m+[m[32m                else[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    workgroup.Progress = (int)(((double)countCompleteTasks / countAllTasks) * 100);[m
+[32m+[m[32m                }[m
+[32m+[m
+[32m+[m[32m                unitOfWork.workgroupRepository.Update(workgroup); // Save the updated workgroup[m[41m         [m
+[32m+[m[32m            }[m
+[32m+[m
+             // Update the status[m
+[31m-            existingTask.Status = status;[m
+[32m+[m[32m            existingTask.Status = status.ToLower();[m
+[32m+[m
+[32m+[m[32m            unitOfWork.taskRepository.Update(existingTask); // Save the updated task[m
+ [m
+[31m-            // Save the updated task[m
+[31m-            unitOfWork.taskRepository.Update(existingTask);[m
+             int successSave = await unitOfWork.save();[m
+             if (successSave == 0)[m
+             {[m
+[1mdiff --git a/StudentProjectCenterSystem/Controllers/project/ProjectsAdminController.cs b/StudentProjectCenterSystem/Controllers/project/ProjectsAdminController.cs[m
+[1mindex bf081d4..4c5b0cc 100644[m
+[1m--- a/StudentProjectCenterSystem/Controllers/project/ProjectsAdminController.cs[m
+[1m+++ b/StudentProjectCenterSystem/Controllers/project/ProjectsAdminController.cs[m
+[36m@@ -36,7 +36,7 @@[m [mnamespace StudentProjectsCenter.Controllers.project[m
+ [m
+ [m
+         [HttpGet][m
+[31m-        [ResponseCache(CacheProfileName = "defaultCache")][m
+[32m+[m[32m        //[ResponseCache(CacheProfileName = "defaultCache")][m
+         public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? projectName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)[m
+         {[m
+             Expression<Func<StudentProjectsCenterSystem.Core.Entities.project.Project, bool>> filter = x => true;[m
+[1mdiff --git a/StudentProjectCenterSystem/appsettings.json b/StudentProjectCenterSystem/appsettings.json[m
+[1mindex 389b6f6..4d804f7 100644[m
+[1m--- a/StudentProjectCenterSystem/appsettings.json[m
+[1m+++ b/StudentProjectCenterSystem/appsettings.json[m
+[36m@@ -14,7 +14,7 @@[m
+         "SecretKey": "Noor Mustafa Shaker Token for Project"[m
+     },[m
+     "TokenSettings": {[m
+[31m-        "JWTExpirationDays": 7,[m
+[32m+[m[32m        "JWTExpirationDays": 1,[m
+         "IdentityTokenLifespanHours": 1[m
+     },[m
+     "EmailSettings": {[m
+[1mdiff --git a/StudentProjectCenterSystem/obj/Debug/net8.0/apphost.exe b/StudentProjectCenterSystem/obj/Debug/net8.0/apphost.exe[m
+[1mindex c7bbae3..c740a1b 100644[m
+Binary files a/StudentProjectCenterSystem/obj/Debug/net8.0/apphost.exe and b/StudentProjectCenterSystem/obj/Debug/net8.0/apphost.exe differ
+[1mdiff --git a/StudentProjectsCenterSystem.Core/Entities/DTO/Workgroup/Task/TaskCreateDTO.cs b/StudentProjectsCenterSystem.Core/Entities/DTO/Workgroup/Task/TaskCreateDTO.cs[m
+[1mindex 154b6cb..7199641 100644[m
+[1m--- a/StudentProjectsCenterSystem.Core/Entities/DTO/Workgroup/Task/TaskCreateDTO.cs[m
+[1m+++ b/StudentProjectsCenterSystem.Core/Entities/DTO/Workgroup/Task/TaskCreateDTO.cs[m
+[36m@@ -1,9 +1,11 @@[m
+ ﻿using Microsoft.AspNetCore.Http;[m
+[32m+[m[32musing System.ComponentModel.DataAnnotations;[m
+ [m
+ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup[m
+ {[m
+[31m-    public class TaskCreateDto[m
+[32m+[m[32m    public class TaskCreateDTO[m
+     {[m
+[32m+[m[32m        [Required][m
+         public string Title { get; set; } = string.Empty;[m
+         public string Description { get; set; } = string.Empty;[m
+         //public string Status { get; set; } = string.Empty;[m
+[1mdiff --git a/StudentProjectsCenterSystem.Services/TokenService.cs b/StudentProjectsCenterSystem.Services/TokenService.cs[m
+[1mindex 09d5b0d..4528c03 100644[m
+[1m--- a/StudentProjectsCenterSystem.Services/TokenService.cs[m
+[1m+++ b/StudentProjectsCenterSystem.Services/TokenService.cs[m
+[36m@@ -44,7 +44,7 @@[m [mnamespace StudentProjectsCenterSystem.Services[m
+             };[m
+ [m
+             // Fetch roles and add them as claims[m
+[31m-            var roles = await userManager.GetRolesAsync(localUser);[m
+[32m+[m[32m            var roles = await userManager.GetRolesAsync(localUser ?? new LocalUser());[m
+             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));[m
+ [m
+             var jwtExpirationDays = configuration.GetValue<int>("TokenSettings:JWTExpirationDays");[m
