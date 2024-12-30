@@ -16,6 +16,7 @@ using System.Linq.Expressions;
 
 namespace StudentProjectsCenter.Controllers.project
 {
+    [Authorize(Roles ="admin")]
     [Route("api/admin/projects")]
     [ApiController]
     public class ProjectsAdminController : ControllerBase
@@ -36,7 +37,7 @@ namespace StudentProjectsCenter.Controllers.project
 
 
         [HttpGet]
-        [ResponseCache(CacheProfileName = "defaultCache")]
+        //[ResponseCache(CacheProfileName = "defaultCache")]
         public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? projectName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
             Expression<Func<StudentProjectsCenterSystem.Core.Entities.project.Project, bool>> filter = x => true;

@@ -44,7 +44,7 @@ namespace StudentProjectsCenterSystem.Services
             };
 
             // Fetch roles and add them as claims
-            var roles = await userManager.GetRolesAsync(localUser);
+            var roles = await userManager.GetRolesAsync(localUser ?? new LocalUser());
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var jwtExpirationDays = configuration.GetValue<int>("TokenSettings:JWTExpirationDays");

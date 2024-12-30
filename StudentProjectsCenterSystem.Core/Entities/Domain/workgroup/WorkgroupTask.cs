@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -28,12 +29,14 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
         public DateTime? End { get; set; }
         public DateTime? LastUpdatedAt { get; set; }
         public DateTime? SubmittedAt { get; set; }
+        public string? SubmittedBy { get; set; }
+        public string Author { get; set; } = string.Empty;
+        public string? LastUpdateBy { get; set; }
 
         //public List<string> ValidExtensions = new List<string>();
 
-        public List<string>? QuestionFilePath { get; set; }
-        public List<string>? SubmittedFilePath { get; set; }
-        //public string? FileName { get; set; }
+        // Navigation property for WorkgroupFile
+        public IEnumerable<WorkgroupFile>? Files { get; set; }
 
         [JsonIgnore]
         public int WorkgroupId { get; set; }

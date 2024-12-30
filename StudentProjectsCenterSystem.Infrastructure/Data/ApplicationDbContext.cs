@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenter.Core.Entities.Domain;
 using StudentProjectsCenter.Core.Entities.Domain.Terms;
+using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
@@ -40,6 +41,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
 
         public DbSet<Workgroup> Workgroups { get; set; }
         public DbSet<WorkgroupTask> Tasks { get; set; }
+        public DbSet<WorkgroupFile> WorkgroupFiles { get; set; }
 
         public DbSet<Term> Terms { get; set; }
 

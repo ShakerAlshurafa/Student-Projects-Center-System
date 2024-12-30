@@ -80,7 +80,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             return models;
         }
 
-        public async Task<T?> GetById(int id, string? includeProperty = null)
+        public async Task<T> GetById(int id, string? includeProperty = null)
         {
             IQueryable<T> query = dbContext.Set<T>();
 

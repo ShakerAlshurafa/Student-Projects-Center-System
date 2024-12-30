@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup
 {
-    public class TaskCreateDto
+    public class TaskCreateDTO
     {
+        [Required]
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         //public string Status { get; set; } = string.Empty;

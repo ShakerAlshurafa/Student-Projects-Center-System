@@ -19,7 +19,7 @@ namespace StudentProjectsCenter.Services
             await taskStatusUpdater.UpdateAsync(
                 t => 
                     t.Status.ToLower() == "not started" 
-                    && t.Start >= DateTime.UtcNow, 
+                    && t.Start <= DateTime.UtcNow, 
                 "Status", 
                 "In Progress"
             );

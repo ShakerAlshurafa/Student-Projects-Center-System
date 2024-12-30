@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         // Get all users
+        [Authorize(Roles = "admin")]
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll()
         {
@@ -57,6 +59,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
         // Get limit number of users
+        [Authorize(Roles = "admin")]
         [HttpGet("get-with-pagination")]
         public async Task<ActionResult<ApiResponse>> GetWithPagination([FromQuery] string? userName = null, [FromQuery] int PageSize = 6, int PageNumber = 1)
         {
@@ -114,7 +117,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
 
-
+        [Authorize(Roles = "admin")]
         [HttpGet("role/{role}")]
         public async Task<ActionResult<ApiResponse>> GetByRole(string role)
         {
@@ -173,6 +176,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             return new ApiResponse(200, "Users retrieved successfully", userDTOs);
         }
+
 
         [HttpGet("customers")]
         public async Task<ActionResult<ApiResponse>> GetCustomers([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
@@ -255,7 +259,7 @@ namespace StudentProjectsCenterSystem.Controllers
             }));
         }
 
-
+        [Authorize]
         [HttpGet("get-user-info/{userId}")]
         public async Task<ActionResult<ApiResponse>> GetUserInfo(string userId)
         {
@@ -291,6 +295,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return string.IsNullOrWhiteSpace(value) ? target : value;
         }
 
+        [Authorize]
         [HttpPut("change-user-info/{userId}")]
         public async Task<ActionResult<ApiResponse>> UpdateUserInfo(
             string userId,

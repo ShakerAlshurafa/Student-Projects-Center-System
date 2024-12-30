@@ -10,6 +10,7 @@ namespace StudentProjectsCenterSystem.Core.IRepositories
         public IUserRepository userRepository { get; set; }
         public IWorkgroupRepository workgroupRepository { get; set; }
         public ITaskRepository taskRepository { get; set; }
+        public IFileRepository fileRepository { get; set; }
         public ITermRepository termRepository { get; set; }
         public IMessageRepository messageRepository { get; set; }
 
