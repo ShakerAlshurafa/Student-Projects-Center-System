@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Project;
@@ -25,6 +26,7 @@ namespace StudentProjectsCenter.Controllers.project
             this.userManager = userManager;
         }
 
+        [Authorize]
         [HttpGet("details/{id}")]
         public async Task<ActionResult<ApiResponse>> GetById(int id)
         {
@@ -37,6 +39,7 @@ namespace StudentProjectsCenter.Controllers.project
             return Ok(new ApiResponse(200, result: model));
         }
 
+        [Authorize]
         [HttpGet("project-statuses")]
         public ActionResult<ApiResponse> GetAllProjectStatuses()
         {
@@ -63,7 +66,7 @@ namespace StudentProjectsCenter.Controllers.project
             return Ok(new ApiResponse(200, result: favoriteProjects));
         }
 
-
+        [Authorize(Roles ="supervisor")]
         [HttpPut("{projectId}/status")]
         public async Task<ActionResult<ApiResponse>> UpdateProjectStatus(
             int projectId,

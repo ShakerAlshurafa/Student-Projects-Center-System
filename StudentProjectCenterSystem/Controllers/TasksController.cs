@@ -13,7 +13,7 @@ using System.Security.Claims;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/tasks")]
     [ApiController]
     public class TasksController : ControllerBase
@@ -98,8 +98,9 @@ namespace StudentProjectsCenterSystem.Controllers
                 return NotFound($"Workgroup with ID {workgroupId} was not found.");
             }
 
-            var countCompleteTasks = await unitOfWork.taskRepository.Count(t => t.Status.ToLower() == "complete");
-            var countAllTasks = await unitOfWork.taskRepository.Count();
+            var countCompleteTasks = await unitOfWork.taskRepository.Count(t => 
+                t.WorkgroupId == workgroupId && t.Status.ToLower() == "complete");
+            var countAllTasks = await unitOfWork.taskRepository.Count(t => t.WorkgroupId == workgroupId);
 
             if (countAllTasks == 0)
             {
@@ -107,7 +108,7 @@ namespace StudentProjectsCenterSystem.Controllers
             }
             else
             {
-                workgroup.Progress = (countCompleteTasks / countAllTasks) * 100;
+                workgroup.Progress = (int)(((double)countCompleteTasks / countAllTasks) * 100);
             }
 
             // Check if dates are in the future
@@ -286,6 +287,15 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiResponse(400, "Status is required."));
             }
 
+            status = status.ToLower();
+
+            var taskStatus = new List<string> { "on hold", "completed", "rejected", "canceled" };
+            if (!taskStatus.Contains(status))
+            {
+                return BadRequest(new ApiResponse(400, 
+                    $"The provided status '{status}' is invalid. Valid statuses are: {string.Join(", ", taskStatus)}."));
+            }
+
             // Retrieve the task from the repository
             var existingTask = await unitOfWork.taskRepository.GetById(id);
             if (existingTask == null)
@@ -301,8 +311,9 @@ namespace StudentProjectsCenterSystem.Controllers
                     return NotFound($"Workgroup with ID {existingTask.WorkgroupId} was not found.");
                 }
 
-                var countCompleteTasks = await unitOfWork.taskRepository.Count(t => t.Status.ToLower() == "complete");
-                var countAllTasks = await unitOfWork.taskRepository.Count();
+                var countCompleteTasks = await unitOfWork.taskRepository.Count(t =>
+                    t.WorkgroupId == workgroup.Id && t.Status.ToLower() == "complete");
+                var countAllTasks = await unitOfWork.taskRepository.Count(t => t.WorkgroupId == workgroup.Id);
 
                 if (countAllTasks == 0)
                 {
@@ -371,7 +382,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             // Update task with the submitted file information
             task.SubmittedFilePath = uploadedFiles.Select(f => f.FilePath).ToList();  // Store the submitted file path
-            task.Status = "Submitted";  // Update task status to Submitted
+            task.Status = "submitted";  // Update task status to Submitted
 
             task.SubmittedAt = DateTime.UtcNow;
 

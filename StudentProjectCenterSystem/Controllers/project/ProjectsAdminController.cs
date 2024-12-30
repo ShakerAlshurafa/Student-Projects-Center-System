@@ -16,6 +16,7 @@ using System.Linq.Expressions;
 
 namespace StudentProjectsCenter.Controllers.project
 {
+    [Authorize(Roles ="admin")]
     [Route("api/admin/projects")]
     [ApiController]
     public class ProjectsAdminController : ControllerBase

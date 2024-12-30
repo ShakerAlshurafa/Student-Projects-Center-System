@@ -30,8 +30,8 @@ namespace StudentProjectsCenter.Controllers.project
         }
 
 
-        [HttpGet("get-all-for-user")]
         [Authorize]
+        [HttpGet("get-all-for-user")]
         //[ResponseCache(CacheProfileName = ("defaultCache"))]
         public async Task<ActionResult<ApiResponse>> GetAllForUser([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
         {
