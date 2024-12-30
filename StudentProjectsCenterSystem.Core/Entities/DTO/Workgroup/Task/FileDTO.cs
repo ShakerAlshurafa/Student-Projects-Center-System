@@ -4,17 +4,18 @@
     {
         public FileDTO()
         {
-            FileName = string.Empty;
-            FilePath = string.Empty;
+            Name = string.Empty;
+            Path = string.Empty;
         }
 
         public FileDTO(string errorMessage) : this()
         {
             ErrorMessage = errorMessage;
         }
-
-        public string FilePath { get; set; }
-        public string FileName { get; set; }
+        public string? Path { get; set; }
+        public string? Name { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string? Type { get; set; }  // "Question" or "Answer"
         public string? ErrorMessage { get; set; }
     }
 }

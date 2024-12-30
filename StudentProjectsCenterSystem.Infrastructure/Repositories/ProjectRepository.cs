@@ -1,14 +1,10 @@
-﻿using AutoMapper;
-using Castle.Core.Resource;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenter.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
-using System.Linq.Expressions;
-using System.Net.NetworkInformation;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
@@ -82,7 +78,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 EndDate = project?.EndDate,
                 ChangeStatusNotes = project?.ChangeStatusNotes,
                 ChangeStatusAt = project?.ChangeStatusAt
-        };
+            };
 
             return viewModel;
         }

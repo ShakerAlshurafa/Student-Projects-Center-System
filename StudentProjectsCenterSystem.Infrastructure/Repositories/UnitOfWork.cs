@@ -15,6 +15,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         public IUserRepository userRepository { get; set; }
         public IWorkgroupRepository workgroupRepository { get; set; }
         public ITaskRepository taskRepository { get; set; }
+        public IFileRepository fileRepository { get; set; }
         public ITermRepository termRepository { get; set; }
         public IMessageRepository messageRepository { get; set; }
 
@@ -30,6 +31,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             taskRepository = new TaskRepository(dbContext);
             termRepository = new TermRepository(dbContext);
             messageRepository = new MessageRepository(dbContext);
+            fileRepository = new FileRepository(dbContext);
         }
 
         public async Task<int> save() => await dbContext.SaveChangesAsync();

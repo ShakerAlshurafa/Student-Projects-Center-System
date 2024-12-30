@@ -155,6 +155,39 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task.WorkgroupFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("WorkgroupTaskId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkgroupTaskId");
+
+                    b.ToTable("WorkgroupFiles");
+                });
+
             modelBuilder.Entity("StudentProjectsCenter.Core.Entities.Domain.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -291,6 +324,10 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -298,11 +335,11 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Property<DateTime?>("End")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("LastUpdateBy")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("LastUpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("QuestionFilePath")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("Start")
                         .HasColumnType("datetime2");
@@ -314,7 +351,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Property<DateTime?>("SubmittedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("SubmittedFilePath")
+                    b.Property<string>("SubmittedBy")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -545,6 +582,17 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task.WorkgroupFile", b =>
+                {
+                    b.HasOne("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.WorkgroupTask", "WorkgroupTask")
+                        .WithMany("Files")
+                        .HasForeignKey("WorkgroupTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WorkgroupTask");
+                });
+
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>
                 {
                     b.HasOne("StudentProjectsCenterSystem.Core.Entities.project.Project", "Project")
@@ -617,6 +665,11 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Navigation("Project");
 
                     b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.WorkgroupTask", b =>
+                {
+                    b.Navigation("Files");
                 });
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.LocalUser", b =>

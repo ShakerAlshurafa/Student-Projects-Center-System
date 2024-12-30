@@ -49,13 +49,16 @@ public class AzureFileUploader
 
             return new FileDTO
             {
-                FileName = fileName,
-                FilePath = blobClient.Uri.ToString()
+                Name = Path.GetFileNameWithoutExtension(file.FileName),
+                Path = blobClient.Uri.ToString()
             };
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"File upload failed: {ex.Message}");
+            return new FileDTO
+            {
+                ErrorMessage = ex.Message,
+            };
         }
     }
 }

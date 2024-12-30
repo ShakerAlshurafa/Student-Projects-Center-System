@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 
 namespace StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup
 {
@@ -13,9 +9,15 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup
         public string Status { get; set; } = string.Empty;
         public DateTime? Start { get; set; }
         public DateTime? End { get; set; }
+
+        public List<FileDTO>? QuestionFiles { get; set; }
+        public string Author { get; set; } = string.Empty;
         public DateTime? LastUpdatedAt { get; set; }
-        public List<string>? QuestionFilePath { get; set; }
-        public List<string>? SubmittedFilePath { get; set; }
-        //public string? FileName { get; set; }
+        public string? LastUpdateBy { get; set; }
+
+        public List<FileDTO>? AnswerFiles { get; set; }
+        public string? SubmittedBy { get; set; }
+        public DateTime? SubmittedAt { get; set; }
+
     }
 }
