@@ -74,7 +74,7 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             // Fetch tasks for the specified workgroup with pagination
-            var tasks = await unitOfWork.taskRepository.GetAll(filter: t => t.WorkgroupId == workgroupId );
+            var tasks = await unitOfWork.taskRepository.GetAll(filter: t => t.WorkgroupId == workgroupId);
 
             // Check if tasks are available
             if (tasks == null || !tasks.Any())
@@ -100,7 +100,28 @@ namespace StudentProjectsCenterSystem.Controllers
                 return NotFound($"Workgroup with ID {workgroupId} was not found.");
             }
 
-            var countCompleteTasks = await unitOfWork.taskRepository.Count(t => 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new ApiResponse(401, "User not found."));
+            }
+
+            if (workgroup.Project == null)
+            {
+                return Unauthorized(new ApiResponse(401, "Project not associated with workgroup."));
+            }
+
+            bool isSupervisor = workgroup.Project.UserProjects
+                .Any(u => u.UserId == userId && u.Role == "supervisor");
+
+            if (!isSupervisor)
+            {
+                return Unauthorized(new ApiResponse(401, "User is not a supervisor."));
+            }
+
+
+            var countCompleteTasks = await unitOfWork.taskRepository.Count(t =>
                 t.WorkgroupId == workgroupId && t.Status.ToLower() == "complete");
             var countAllTasks = await unitOfWork.taskRepository.Count(t => t.WorkgroupId == workgroupId);
 
@@ -122,9 +143,9 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiResponse(400, "The start date must be earlier than the end date."));
 
             var uploadedFiles = new List<FileDTO>();
-            if (taskDto.File != null)
+            if (taskDto.QuestionFile != null)
             {
-                foreach (var file in taskDto.File)
+                foreach (var file in taskDto.QuestionFile)
                 {
                     if (file.Length == 0)
                     {
@@ -166,14 +187,16 @@ namespace StudentProjectsCenterSystem.Controllers
                 return StatusCode(500, new ApiResponse(500, "Create failed"));
             }
 
-            return CreatedAtAction(nameof(Create), new { id = task.Id }, 
+            return CreatedAtAction(nameof(Create), new { id = task.Id },
                 new ApiResponse(201, "Task created successfully", result: task.Id));
         }
 
 
         [Authorize(Roles = "supervisor")]
         [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse>> Update(int id, [FromForm] TaskUpdateDTO taskDto)
+        public async Task<ActionResult<ApiResponse>> Update(
+            int id, 
+            [FromForm, Required] TaskUpdateDTO taskDto)
         {
             // Validate taskDto
             if (!ModelState.IsValid)
@@ -263,8 +286,8 @@ namespace StudentProjectsCenterSystem.Controllers
             var questionFiles = new List<FileDTO>();
             var answerFiles = new List<FileDTO>();
 
-            if (task.Files != null) { 
-                foreach(var file in task.Files.ToList())
+            if (task.Files != null) {
+                foreach (var file in task.Files.ToList())
                 {
                     if (file.Type == "question")
                     {
@@ -286,7 +309,7 @@ namespace StudentProjectsCenterSystem.Controllers
                             Type = file.Type
                         });
                     }
-                }          
+                }
             }
             var taskDto = new TaskDTO()
             {
@@ -309,7 +332,9 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [Authorize(Roles = "supervisor")]
         [HttpPut("{id}/change-status")]
-        public async Task<ActionResult<ApiResponse>> ChangeStatus([Required] int id, [Required, FromBody] string status)
+        public async Task<ActionResult<ApiResponse>> ChangeStatus(
+            int id, 
+            [Required, FromBody] string status)
         {
             // Validate the status input
             if (string.IsNullOrWhiteSpace(status))
@@ -322,7 +347,7 @@ namespace StudentProjectsCenterSystem.Controllers
             var taskStatus = new List<string> { "on hold", "completed", "rejected", "canceled" };
             if (!taskStatus.Contains(status))
             {
-                return BadRequest(new ApiResponse(400, 
+                return BadRequest(new ApiResponse(400,
                     $"The provided status '{status}' is invalid. Valid statuses are: {string.Join(", ", taskStatus)}."));
             }
 
@@ -333,7 +358,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 return NotFound(new ApiResponse(404, "Task not found."));
             }
 
-            if(existingTask.Status.ToLower() == "complete" || status.ToLower() == "complete")
+            if (existingTask.Status.ToLower() == "complete" || status.ToLower() == "complete")
             {
                 var workgroup = await unitOfWork.workgroupRepository.GetById(existingTask.WorkgroupId);
                 if (workgroup == null)
@@ -372,7 +397,9 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
         [HttpPost("{id}/submit-answer")]
-        public async Task<ActionResult<ApiResponse>> SubmitAnswer([Required] int id, [FromForm] TaskSubmitDTO taskSubmitDTO)
+        public async Task<ActionResult<ApiResponse>> SubmitAnswer(
+            int id, 
+            [FromForm] TaskSubmitDTO taskSubmitDTO)
         {
             if (taskSubmitDTO == null || taskSubmitDTO.File == null)
             {
@@ -444,8 +471,8 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
         [Authorize(Roles = "supervisor")]
-        [HttpDelete]
-        public async Task<ActionResult<ApiResponse>> Delete([Required] int id)
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<ApiResponse>> Delete(int id)
         {
             int successDelete = unitOfWork.taskRepository.Delete(id);
             if (successDelete == 0)
