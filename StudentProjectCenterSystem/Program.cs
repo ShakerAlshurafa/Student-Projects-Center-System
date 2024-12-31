@@ -169,6 +169,9 @@ namespace StudentProjectCenterSystem
 
             var app = builder.Build();
 
+            // Serve files from wwwroot
+            app.UseStaticFiles();
+
             // Use SignalR
             app.MapHub<ChatHub>("/chathub");
 
