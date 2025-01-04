@@ -91,11 +91,10 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             int users_count = await unitOfWork.userRepository.Count(filter);
-            var page_count = (int)Math.Ceiling((double)users_count / PageSize);
 
             return new ApiResponse(200, "Users retrieved successfully", new
             {
-                TotalPages = page_count,
+                Total = users_count,
                 Users = userDTOs
             });
         }
@@ -187,11 +186,10 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             int users_count = await unitOfWork.userRepository.Count(filter);
-            var page_count = (int)Math.Ceiling((double)users_count / PageSize);
 
             return new ApiResponse(200, "Users retrieved successfully", new
             {
-                TotalPages = page_count,
+                Total = users_count,
                 Students = userDTOs
             });
         }
@@ -227,11 +225,10 @@ namespace StudentProjectsCenterSystem.Controllers
                 });
             }
             int users_count = await unitOfWork.userRepository.Count(filter);
-            var page_count = (int)Math.Ceiling((double)users_count / PageSize);
 
             return new ApiResponse(200, "Users retrieved successfully", new
             {
-                TotalPages = page_count,
+                Total = users_count,
                 Customers = userDTOs
             });
         }

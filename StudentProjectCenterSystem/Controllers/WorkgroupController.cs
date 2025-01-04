@@ -71,11 +71,10 @@ namespace StudentProjectsCenterSystem.Controllers
             });
 
             int workgroups_count = await unitOfWork.workgroupRepository.Count(filter);
-            var page_count = (int)Math.Ceiling((double)workgroups_count / PageSize);
 
             return new ApiResponse(200, "Workgroups retrieved successfully", new
             {
-                TotalPages = page_count,
+                Total = workgroups_count,
                 Workgroups = workgroupDTOs
             });
         }
@@ -137,11 +136,10 @@ namespace StudentProjectsCenterSystem.Controllers
             });
 
             int workgroups_count = await unitOfWork.workgroupRepository.Count(filter);
-            var page_count = (int)Math.Ceiling((double)workgroups_count / PageSize);
 
             return new ApiResponse(200, "Workgroups retrieved successfully for the user.", new
             {
-                TotalPages = page_count,
+                Total = workgroups_count,
                 Workgroups = workgroupDTOs
             });
         }

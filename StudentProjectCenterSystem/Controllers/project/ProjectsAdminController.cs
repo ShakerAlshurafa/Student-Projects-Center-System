@@ -56,7 +56,6 @@ namespace StudentProjectsCenter.Controllers.project
             }
 
             int project_count = await unitOfWork.projectRepository.Count();
-            var page_count = (int)Math.Ceiling((double)project_count / PageSize);
 
             var projectDTOs = model.Select(project =>
             {
@@ -91,7 +90,7 @@ namespace StudentProjectsCenter.Controllers.project
             }).ToList();
 
             return new ApiResponse(200, "Projects retrieved successfully", new { 
-                TotalPages = page_count, Projects = projectDTOs 
+                Total = project_count, Projects = projectDTOs 
             });
         }
 
@@ -176,7 +175,9 @@ namespace StudentProjectsCenter.Controllers.project
         }
 
         [HttpPost("co-supervisor")]
-        public async Task<ActionResult<ApiResponse>> AddCoSupervisor([Required] int projectId, [Required] CreateCoSupervisorDTO supervisor)
+        public async Task<ActionResult<ApiResponse>> AddCoSupervisor(
+            [Required] int projectId, 
+            [Required] CreateCoSupervisorDTO supervisor)
         {
 
             var existingProject = await unitOfWork.projectRepository.GetById(projectId, "UserProjects");

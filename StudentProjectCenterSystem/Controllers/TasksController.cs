@@ -218,17 +218,18 @@ namespace StudentProjectsCenterSystem.Controllers
                 || (existingTask.End != taskDto.End && existingTask.End < DateTime.UtcNow))
                 return BadRequest(new ApiResponse(400, "Dates must not be in the past."));
 
-            existingTask.Start = taskDto.Start ?? existingTask.Start;
-            existingTask.End = taskDto.End ?? existingTask.End;
+            existingTask.Start = taskDto.Start;
+            existingTask.End = taskDto.End;
 
             // Check if Start and End dates are valid
             if (existingTask.Start >= existingTask.End)
                 return BadRequest(new ApiResponse(400, "The start date must be earlier than the end date."));
 
             // Update properties
-            existingTask.Title = taskDto.Title ?? existingTask.Title;
-            existingTask.Description = taskDto.Description ?? existingTask.Description;
+            existingTask.Title = taskDto.Title ?? "";
+            existingTask.Description = taskDto.Description ?? "";
 
+            existingTask.Files = null;
 
             if (taskDto.QuestionFile != null)
             {
@@ -236,34 +237,48 @@ namespace StudentProjectsCenterSystem.Controllers
                 //    return BadRequest(new ApiResponse(400, "Valid extensions are required for the file."));
 
                 var uploadedFiles = new List<FileDTO>();
+                var existingFiles = new List<WorkgroupFile>();
+
                 foreach (var file in taskDto.QuestionFile)
                 {
-                    if (file.Length == 0)
+                    if (file is IFormFile uploadedFile) // Check if it's a new uploaded file
                     {
-                        return BadRequest(new ApiResponse(400, "File is Empty."));
+                        if (uploadedFile.Length == 0)
+                        {
+                            return BadRequest(new ApiResponse(400, "File is Empty."));
+                        }
+
+                        var fileDto = await _uploadHandler.UploadAsync(uploadedFile, "resources");
+
+                        if (!fileDto.ErrorMessage.IsNullOrEmpty())
+                        {
+                            return BadRequest(new ApiResponse(400, fileDto.ErrorMessage));
+                        }
+
+                        uploadedFiles.Add(fileDto);
                     }
-
-                    var fileDto = await _uploadHandler.UploadAsync(file, "resources");
-
-
-                    if (!fileDto.ErrorMessage.IsNullOrEmpty())
+                    else // it's an existing file
                     {
-                        return BadRequest(new ApiResponse(400, fileDto.ErrorMessage));
+                        WorkgroupFile existingFile= (WorkgroupFile) file;
+                        existingFiles.Add(new WorkgroupFile
+                        {
+                            Path = existingFile.Path,
+                            Name = existingFile.Name ?? "",
+                            Type = "question"
+                        });
                     }
-
-                    uploadedFiles.Add(fileDto);
                 }
 
-                existingTask.Files = uploadedFiles.Select(f => new WorkgroupFile()
+                // Save new files
+                var newFiles = uploadedFiles.Select(f => new WorkgroupFile
                 {
                     Path = f.Path ?? "",
                     Name = f.Name ?? "",
                     Type = "question"
                 }).ToList();
-            }
-            else
-            {
-                existingTask.Files = null;
+
+                // Combine new files with existing files
+                existingTask.Files = newFiles.Concat(existingFiles).ToList();
             }
 
             existingTask.LastUpdateBy = User?.Identity?.Name ?? "";
