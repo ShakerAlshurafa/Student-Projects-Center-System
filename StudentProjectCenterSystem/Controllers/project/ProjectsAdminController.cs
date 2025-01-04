@@ -36,9 +36,12 @@ namespace StudentProjectsCenter.Controllers.project
         }
 
 
-        [HttpGet]
+        [HttpGet("{PageSize}/{PageNumber}")]
         //[ResponseCache(CacheProfileName = "defaultCache")]
-        public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? projectName = null, [FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        public async Task<ActionResult<ApiResponse>> GetAll(
+            [FromQuery] string? projectName = null, 
+            int PageSize = 6, 
+            int PageNumber = 1)
         {
             Expression<Func<StudentProjectsCenterSystem.Core.Entities.project.Project, bool>> filter = x => true;
             if (!string.IsNullOrEmpty(projectName))
@@ -52,6 +55,8 @@ namespace StudentProjectsCenter.Controllers.project
                 return new ApiResponse(404, "No Projects Found");
             }
 
+            int project_count = await unitOfWork.projectRepository.Count();
+            var page_count = (int)Math.Ceiling((double)project_count / PageSize);
 
             var projectDTOs = model.Select(project =>
             {
@@ -61,6 +66,7 @@ namespace StudentProjectsCenter.Controllers.project
                     .FirstOrDefault(up => up.Role == "co-supervisor" && !up.IsDeleted);
                 var customer = project?.UserProjects?
                     .FirstOrDefault(up => up.Role == "customer" && !up.IsDeleted);
+
 
                 return new ProjectDTO
                 {
@@ -84,7 +90,9 @@ namespace StudentProjectsCenter.Controllers.project
                 };
             }).ToList();
 
-            return new ApiResponse(200, "Projects retrieved successfully", projectDTOs);
+            return new ApiResponse(200, "Projects retrieved successfully", new { 
+                TotalPages = page_count, Projects = projectDTOs 
+            });
         }
 
 
@@ -291,7 +299,9 @@ namespace StudentProjectsCenter.Controllers.project
 
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse>> Update(int id, [FromBody, Required] UpdateProjectDTO updateProjectDTO)
+        public async Task<ActionResult<ApiResponse>> Update(
+            int id, 
+            [FromBody, Required] UpdateProjectDTO updateProjectDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -333,7 +343,7 @@ namespace StudentProjectsCenter.Controllers.project
                 }
 
                 var supervisorEntry = existingProject.UserProjects
-                                .FirstOrDefault(up => up.Role == "supervisor");
+                                .FirstOrDefault(up => up.Role.ToLower() == "supervisor");
 
                 if (supervisorEntry == null)
                 {
@@ -367,10 +377,30 @@ namespace StudentProjectsCenter.Controllers.project
                 }
 
                 customerrEntry.IsDeleted = true;
-                customerrEntry.DeletedNotes = updateProjectDTO.ChangeOldCustomerrNotes;
+                customerrEntry.DeletedNotes = updateProjectDTO.ChangeOldCustomerNotes;
                 customerrEntry.DeletededAt = DateTime.UtcNow;
 
                 existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.CustomerId, Role = "customer" });
+            }
+
+            if(updateProjectDTO.Status != null)
+            {
+                // Validate the new status
+                var validStatuses = new List<string> { "active", "completed", "pending", "canceled" };
+                if (string.IsNullOrWhiteSpace(updateProjectDTO.Status) || !validStatuses.Contains(updateProjectDTO.Status.ToLower()))
+                {
+                    return BadRequest(new ApiResponse(400, $"Invalid status. Allowed values: {string.Join(", ", validStatuses)}"));
+                }
+
+                // Update the project status
+                existingProject.Status = updateProjectDTO.Status;
+                existingProject.ChangeStatusNotes = updateProjectDTO.ChangeStatusNotes;
+                existingProject.ChangeStatusAt = DateTime.UtcNow;
+
+                if (existingProject.Status == "completed")
+                {
+                    existingProject.EndDate = DateTime.UtcNow;
+                }
             }
 
             // Save the changes

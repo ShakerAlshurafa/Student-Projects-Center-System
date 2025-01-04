@@ -20,19 +20,15 @@ namespace StudentProjectsCenterSystem.Services.Hubs
             _unitOfWork = unitOfWork;
         }
 
-        public async Task SendMessageAsync(SendMessageDTO message, string user)
+        public async Task SendMessageAsync(string message, int workgroupId, string workgroupName, string user)
         {
-            if (message == null || string.IsNullOrWhiteSpace(message.WorkgroupName) || string.IsNullOrWhiteSpace(message.Message))
-            {
-                throw new ArgumentException("Message details cannot be null or empty.");
-            }
 
             // Save message to the database
             var newMessage = new Message
             {
-                WorkgroupName = message.WorkgroupName,
+                WorkgroupId = workgroupId,
                 User = user,
-                Content = message.Message,
+                Content = message,
                 SentAt = DateTime.UtcNow
             };
 
@@ -40,7 +36,7 @@ namespace StudentProjectsCenterSystem.Services.Hubs
             await _unitOfWork.save();
 
             // Notify all users in the workgroup
-            await _hubContext.Clients.Group(message.WorkgroupName).SendAsync("ReceiveMessage", user, newMessage.Content);
+            await _hubContext.Clients.Group(workgroupName).SendAsync("ReceiveMessage", user, newMessage.Content);
         }
 
         public async Task AddUserToWorkgroupAsync(string workgroupName, string userId)

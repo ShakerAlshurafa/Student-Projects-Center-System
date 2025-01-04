@@ -60,13 +60,16 @@ namespace StudentProjectsCenterSystem.Controllers
 
         // Get limit number of users
         [Authorize(Roles = "admin")]
-        [HttpGet("get-with-pagination")]
-        public async Task<ActionResult<ApiResponse>> GetWithPagination([FromQuery] string? userName = null, [FromQuery] int PageSize = 6, int PageNumber = 1)
+        [HttpGet("get-with-pagination/{PageSize}/{PageNumber}")]
+        public async Task<ActionResult<ApiResponse>> GetWithPagination(
+            [FromQuery] string? userName = null, 
+            int PageSize = 6, 
+            int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.EmailConfirmed;
             if (!string.IsNullOrEmpty(userName))
             {
-                filter = x => x.UserName.Contains(userName) && x.EmailConfirmed;
+                filter = x => x.UserName != null && x.UserName.Contains(userName) && x.EmailConfirmed;
             }
 
             var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber);
@@ -87,7 +90,14 @@ namespace StudentProjectsCenterSystem.Controllers
                 });
             }
 
-            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+            int users_count = await unitOfWork.userRepository.Count(filter);
+            var page_count = (int)Math.Ceiling((double)users_count / PageSize);
+
+            return new ApiResponse(200, "Users retrieved successfully", new
+            {
+                TotalPages = page_count,
+                Users = userDTOs
+            });
         }
 
 
@@ -141,8 +151,10 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("students")]
-        public async Task<ActionResult<ApiResponse>> GetStudents([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        [HttpGet("students/{PageSize}/{PageNumber}")]
+        public async Task<ActionResult<ApiResponse>> GetStudents(
+            int PageSize = 6, 
+            int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
                 x.UserProjects.All(u => u.Role.ToLower() == "student");
@@ -174,12 +186,21 @@ namespace StudentProjectsCenterSystem.Controllers
                 });
             }
 
-            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+            int users_count = await unitOfWork.userRepository.Count(filter);
+            var page_count = (int)Math.Ceiling((double)users_count / PageSize);
+
+            return new ApiResponse(200, "Users retrieved successfully", new
+            {
+                TotalPages = page_count,
+                Students = userDTOs
+            });
         }
 
 
-        [HttpGet("customers")]
-        public async Task<ActionResult<ApiResponse>> GetCustomers([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        [HttpGet("customers/{PageSize}/{PageNumber}")]
+        public async Task<ActionResult<ApiResponse>> GetCustomers(
+            int PageSize = 6, 
+            int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
                 x.UserProjects.All(u => u.Role.ToLower() == "customer");
@@ -205,8 +226,14 @@ namespace StudentProjectsCenterSystem.Controllers
                     Company = user.CompanyName ?? ""
                 });
             }
+            int users_count = await unitOfWork.userRepository.Count(filter);
+            var page_count = (int)Math.Ceiling((double)users_count / PageSize);
 
-            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+            return new ApiResponse(200, "Users retrieved successfully", new
+            {
+                TotalPages = page_count,
+                Customers = userDTOs
+            });
         }
 
 

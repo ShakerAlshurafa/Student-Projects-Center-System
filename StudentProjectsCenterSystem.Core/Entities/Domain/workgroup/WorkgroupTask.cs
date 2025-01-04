@@ -16,12 +16,10 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
         /* Status
             Not Started: Task has been created but work has not yet begun.
             In Progress: Task is currently being worked on.
-            *On Hold: Task is temporarily paused.
-            Completed: Task is finished.
             Submitted: Task has been completed and submitted for review.
-            *Approved: Task submission has been reviewed and accepted.
-            Rejected: Task submission has been reviewed and requires changes or adjustments.
-            Canceled: Task is no longer needed and has been closed.
+            *Completed: Task is finished.
+            *Rejected: Task submission has been reviewed and requires changes or adjustments.
+            *Canceled: Task is no longer needed and has been closed.
             Overdue:
         */
         

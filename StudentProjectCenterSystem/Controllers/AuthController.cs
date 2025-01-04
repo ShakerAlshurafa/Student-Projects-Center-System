@@ -17,7 +17,10 @@ namespace StudentProjectsCenterSystem.Controllers
         private readonly UserManager<LocalUser> userManager;
         private readonly IEmailService emailService;
 
-        public AuthController(IAuthRepository userRepository, UserManager<LocalUser> userManager, IEmailService emailService)
+        public AuthController(
+            IAuthRepository userRepository, 
+            UserManager<LocalUser> userManager, 
+            IEmailService emailService)
         {
             this.userRepository = userRepository;
             this.userManager = userManager;

@@ -31,7 +31,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                               ITokenServices tokenServices,
                               IEmailService emailService,
                               IHttpContextAccessor httpContextAccessor,
-                              ILogger<AuthRepository> logger) // Inject the logger
+                              ILogger<AuthRepository> logger // Inject the logger
+                              )
 
         {
             this.dbContext = dbContext;
@@ -122,6 +123,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 return new ApiResponse(400, "This email already exists. Please log in if it belongs to you.");
             }
 
+            var request = httpContextAccessor?.HttpContext?.Request;
+
             var user = new LocalUser
             {
                 UserName = registerationRequestDTO.FirstName + "_" + registerationRequestDTO.LastName,
@@ -130,7 +133,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 FirstName = registerationRequestDTO.FirstName,
                 MiddleName = registerationRequestDTO.MiddleName,
                 LastName = registerationRequestDTO.LastName,
-                CompanyName = registerationRequestDTO.CompanyName ?? ""
+                CompanyName = registerationRequestDTO.CompanyName ?? "",
+                ProfileImageUrl = $"{request?.Scheme}://{request?.Host}/profile-default-picture.png"
             };
 
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
@@ -156,7 +160,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                     // Generate confirmation token
                     var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
 
-                    var request = httpContextAccessor?.HttpContext?.Request;
                     var baseUrl = $"{request?.Scheme}://{request?.Host.Value}";
 
                     // Create confirmation link

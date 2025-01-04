@@ -13,7 +13,9 @@ namespace StudentProjectsCenter.Core.Entities.DTO.Project
         public string SupervisorId { get; set; } = string.Empty;
         public string ChangeOldSupervisorNotes {  get; set; } = string.Empty;
         public string CustomerId { get; set; } = string.Empty;
-        public string ChangeOldCustomerrNotes { get; set; } = string.Empty;
+        public string ChangeOldCustomerNotes { get; set; } = string.Empty;
+        public string? Status { get; set; }
+        public string? ChangeStatusNotes { get; set; }
 
     }
 }
