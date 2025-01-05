@@ -9,6 +9,7 @@ namespace StudentProjectsCenterSystem.Core.Entities
         public string? MiddleName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string? CompanyName { get; set; } = string.Empty;
+        public string? ProfileImageUrl { get; set; }
 
         // Many-to-Many Relationship
         public ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>();

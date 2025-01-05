@@ -207,11 +207,14 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("WorkgroupName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("WorkgroupId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("WorkgroupId")
+                        .IsUnique()
+                        .HasFilter("[WorkgroupId] IS NOT NULL");
 
                     b.ToTable("Messages");
                 });
@@ -429,6 +432,9 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("ProfileImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -593,6 +599,15 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Navigation("WorkgroupTask");
                 });
 
+            modelBuilder.Entity("StudentProjectsCenter.Core.Entities.Domain.Message", b =>
+                {
+                    b.HasOne("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", "Workgroup")
+                        .WithOne("Message")
+                        .HasForeignKey("StudentProjectsCenter.Core.Entities.Domain.Message", "WorkgroupId");
+
+                    b.Navigation("Workgroup");
+                });
+
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>
                 {
                     b.HasOne("StudentProjectsCenterSystem.Core.Entities.project.Project", "Project")
@@ -662,6 +677,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", b =>
                 {
+                    b.Navigation("Message");
+
                     b.Navigation("Project");
 
                     b.Navigation("Tasks");

@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace StudentProjectsCenterSystem.Core.Entities.DTO.Project
+﻿namespace StudentProjectsCenterSystem.Core.Entities.DTO.Project
 {
     public class MyProjectDTO
     {
+        public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string? Status { get; set; }
+        public DateTime? StartDate { get; set; }
     }
 }

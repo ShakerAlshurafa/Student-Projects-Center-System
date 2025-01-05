@@ -1,4 +1,5 @@
-﻿using StudentProjectsCenterSystem.Core.Entities.project;
+﻿using StudentProjectsCenter.Core.Entities.Domain;
+using StudentProjectsCenterSystem.Core.Entities.project;
 using System.Text.Json.Serialization;
 
 namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
@@ -12,6 +13,9 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
 
         // One-to-One Relationship with Project
         public Project? Project { get; set; }  // Navigation Property
+
+        // One-to-One Relationship with Message
+        public Message? Message { get; set; }
 
         // One-to-Many Relationship with Task
         [JsonIgnore]

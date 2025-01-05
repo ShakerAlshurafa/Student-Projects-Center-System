@@ -5,6 +5,7 @@ using StudentProjectsCenter.Core.Entities.Domain;
 using StudentProjectsCenter.Core.Entities.DTO.Message;
 using StudentProjectsCenter.Core.Entities.DTO.Messages;
 using StudentProjectsCenter.Core.IRepositories;
+using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
@@ -29,30 +30,50 @@ namespace StudentProjectsCenter.Controllers
         }
 
         // Endpoint to get old messages
-        [HttpGet("get-messages")]
-        public async Task<IActionResult> GetMessages([FromQuery, Required] string workgroupName)
+        [HttpGet("{workgroupId}/get-messages")]
+        public async Task<IActionResult> GetMessages(int workgroupId)
         {
-            Expression<Func<Message, bool>> filter = m => m.WorkgroupName == workgroupName;
-            var messages = await unitOfWork.messageRepository.GetAll(filter, 100, 1);
+            Expression<Func<Message, bool>> filter = m => m.WorkgroupId == workgroupId;
+            var messages = await unitOfWork.messageRepository.GetAll(filter, 30, 1, "Workgroup");
 
             var userName = User?.Identity?.Name;
             messages = messages.OrderBy(m => m.SentAt).ToList();
 
-            var messageList = mapper.Map<List<MessageDTO>>(messages);
-            foreach (var message in messageList)
+            var messageList = messages.Select(m => new MessageDTO()
             {
-                message.IsUserMessage = (message.User == userName);
-            }
+                WorkgroupName = m?.Workgroup?.Name ?? "",
+                User = m?.User ?? "",
+                Content = m?.Content ?? "",
+                SentAt = m?.SentAt ?? new DateTime(),
+                IsUserMessage = (m?.User == userName)
+            }).ToList();
+
+            //var messageList = mapper.Map<List<MessageDTO>>(messages);
+            //foreach (var message in messageList)
+            //{
+            //    message.IsUserMessage = (message.User == userName);
+            //}
 
             return Ok(messageList);
         }
 
 
         // POST: api/chat/send
-        [HttpPost("send")]
-        public async Task<IActionResult> SendMessage([FromBody] SendMessageDTO message)
+        [HttpPost("{workgroupId}/send")]
+        public async Task<IActionResult> SendMessage(int workgroupId, [FromBody, Required] SendMessageDTO message)
         {
-            if (message == null || string.IsNullOrWhiteSpace(message.WorkgroupName) || string.IsNullOrWhiteSpace(message.Message))
+            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId);
+            if (workgroup == null)
+            {
+                return NotFound("Workgroup cannot be found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(workgroup.Name))
+            {
+                return BadRequest("Workgroup name cannot be empty.");
+            }
+
+            if (message == null || string.IsNullOrWhiteSpace(message.Message))
             {
                 return BadRequest("Message details cannot be null or empty.");
             }
@@ -63,17 +84,23 @@ namespace StudentProjectsCenter.Controllers
                 return Unauthorized("User ID is required.");
             }
 
-            var userName = User?.Identity?.Name ?? "Anonymous";
-            await _chatService.SendMessageAsync(message, userName);
+            var userName = User?.Identity?.Name ?? "Anonymous"; //edit to allow authorize user alone
+            await _chatService.SendMessageAsync(message.Message, workgroupId, workgroup.Name, userName);
 
             return Ok(new { Status = "Message sent successfully." });
         }
 
         // POST: api/chat/join
-        [HttpPost("join")]
-        public async Task<IActionResult> JoinGroup([FromBody, Required] string workgroupName)
+        [HttpPost("{workgroupId}/join")]
+        public async Task<IActionResult> JoinGroup(int workgroupId)
         {
-            if (string.IsNullOrWhiteSpace(workgroupName))
+            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId);
+            if(workgroup == null)
+            {
+                return NotFound("Workgroup cannot be found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(workgroup.Name))
             {
                 return BadRequest("Workgroup name cannot be empty.");
             }
@@ -84,15 +111,21 @@ namespace StudentProjectsCenter.Controllers
                 return Unauthorized("User ID is required.");
             }
 
-            await _chatService.AddUserToWorkgroupAsync(workgroupName, userId);
-            return Ok(new { Status = $"User '{userId}' joined workgroup '{workgroupName}' successfully." });
+            await _chatService.AddUserToWorkgroupAsync(workgroup.Name, userId);
+            return Ok(new { Status = $"User '{userId}' joined workgroup '{workgroup.Name}' successfully." });
         }
 
         // POST: api/chat/leave
-        [HttpPost("leave")]
-        public async Task<IActionResult> LeaveGroup([FromBody, Required] string workgroupName)
+        [HttpPost("{workgroupId}/leave")]
+        public async Task<IActionResult> LeaveGroup(int workgroupId)
         {
-            if (string.IsNullOrWhiteSpace(workgroupName))
+            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId);
+            if (workgroup == null)
+            {
+                return NotFound("Workgroup cannot be found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(workgroup.Name))
             {
                 return BadRequest("Workgroup name cannot be empty.");
             }
@@ -103,8 +136,8 @@ namespace StudentProjectsCenter.Controllers
                 return Unauthorized("User ID is required.");
             }
 
-            await _chatService.RemoveUserFromWorkgroupAsync(workgroupName, userId);
-            return Ok(new { Status = $"User '{userId}' left workgroup '{workgroupName}' successfully." });
+            await _chatService.RemoveUserFromWorkgroupAsync(workgroup.Name, userId);
+            return Ok(new { Status = $"User '{userId}' left workgroup '{workgroup.Name}' successfully." });
         }
 
 

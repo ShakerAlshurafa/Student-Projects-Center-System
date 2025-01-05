@@ -31,9 +31,11 @@ namespace StudentProjectsCenter.Controllers.project
 
 
         [Authorize]
-        [HttpGet("get-all-for-user")]
+        [HttpGet("get-all-for-user/{PageSize}/{PageNumber}")]
         //[ResponseCache(CacheProfileName = ("defaultCache"))]
-        public async Task<ActionResult<ApiResponse>> GetAllForUser([FromQuery] int PageSize = 6, [FromQuery] int PageNumber = 1)
+        public async Task<ActionResult<ApiResponse>> GetAllForUser(
+            int PageSize = 6, 
+            int PageNumber = 1)
         {
             // Retrieve the logged-in user's ID from the claims
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -55,13 +57,22 @@ namespace StudentProjectsCenter.Controllers.project
 
             var projectDTOs = mapper.Map<List<MyProjectDTO>>(projects);
 
-            return new ApiResponse(200, "Projects retrieved successfully", projectDTOs);
+            int projects_count = await unitOfWork.projectRepository.Count(filter);
+            var page_count = (int)Math.Ceiling((double)projects_count / PageSize);
+
+            return new ApiResponse(200, "Projects retrieved successfully", new
+            {
+                TotalPages = page_count,
+                Projects = projectDTOs
+            });
         }
 
 
         [Authorize(Roles = "supervisor,admin")]
         [HttpPost("students")]
-        public async Task<ActionResult<ApiResponse>> AddStudent([Required] int projectId, [Required] CreateStudentDTO students)
+        public async Task<ActionResult<ApiResponse>> AddStudent(
+            [Required] int projectId, 
+            [Required] CreateStudentDTO students)
         {
             var existingProject = await unitOfWork.projectRepository.GetById(projectId, "UserProjects");
             if (existingProject == null)

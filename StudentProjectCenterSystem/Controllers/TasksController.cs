@@ -89,12 +89,14 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [Authorize(Roles = "supervisor")]
         [HttpPost("{workgroupId}")]
-        public async Task<ActionResult<ApiResponse>> Create(int workgroupId, [FromForm, Required] TaskCreateDTO taskDto)
+        public async Task<ActionResult<ApiResponse>> Create(
+            int workgroupId, 
+            [FromForm, Required] TaskCreateDTO taskDto)
         {
             //if (!taskDto.ValidExtensions.Any())
             //    return BadRequest(new ApiResponse(400, "Valid extensions are required."));
 
-            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId);
+            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId, "Project.UserProjects");
             if (workgroup == null)
             {
                 return NotFound($"Workgroup with ID {workgroupId} was not found.");
@@ -113,7 +115,7 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             bool isSupervisor = workgroup.Project.UserProjects
-                .Any(u => u.UserId == userId && u.Role == "supervisor");
+                .Any(u => u.UserId == userId && (u.Role == "supervisor" || u.Role == "co-supervisor"));
 
             if (!isSupervisor)
             {
@@ -211,20 +213,23 @@ namespace StudentProjectsCenterSystem.Controllers
                 return NotFound(new ApiResponse(404, "Task not found."));
             }
 
-            // Update properties
-            existingTask.Title = taskDto.Title ?? existingTask.Title;
-            existingTask.Description = taskDto.Description ?? existingTask.Description;
-            existingTask.Start = taskDto.Start ?? existingTask.Start;
-            existingTask.End = taskDto.End ?? existingTask.End;
-
             // Check if dates are in the future
-            if (existingTask.Start < DateTime.UtcNow || existingTask.End < DateTime.UtcNow)
+            if ((existingTask.Start != taskDto.Start && existingTask.Start < DateTime.UtcNow)
+                || (existingTask.End != taskDto.End && existingTask.End < DateTime.UtcNow))
                 return BadRequest(new ApiResponse(400, "Dates must not be in the past."));
+
+            existingTask.Start = taskDto.Start;
+            existingTask.End = taskDto.End;
 
             // Check if Start and End dates are valid
             if (existingTask.Start >= existingTask.End)
                 return BadRequest(new ApiResponse(400, "The start date must be earlier than the end date."));
 
+            // Update properties
+            existingTask.Title = taskDto.Title ?? "";
+            existingTask.Description = taskDto.Description ?? "";
+
+            existingTask.Files = null;
 
             if (taskDto.QuestionFile != null)
             {
@@ -232,30 +237,48 @@ namespace StudentProjectsCenterSystem.Controllers
                 //    return BadRequest(new ApiResponse(400, "Valid extensions are required for the file."));
 
                 var uploadedFiles = new List<FileDTO>();
+                var existingFiles = new List<WorkgroupFile>();
+
                 foreach (var file in taskDto.QuestionFile)
                 {
-                    if (file.Length == 0)
+                    if (file is IFormFile uploadedFile) // Check if it's a new uploaded file
                     {
-                        return BadRequest(new ApiResponse(400, "File is Empty."));
+                        if (uploadedFile.Length == 0)
+                        {
+                            return BadRequest(new ApiResponse(400, "File is Empty."));
+                        }
+
+                        var fileDto = await _uploadHandler.UploadAsync(uploadedFile, "resources");
+
+                        if (!fileDto.ErrorMessage.IsNullOrEmpty())
+                        {
+                            return BadRequest(new ApiResponse(400, fileDto.ErrorMessage));
+                        }
+
+                        uploadedFiles.Add(fileDto);
                     }
-
-                    var fileDto = await _uploadHandler.UploadAsync(file, "resources");
-
-
-                    if (!fileDto.ErrorMessage.IsNullOrEmpty())
+                    else // it's an existing file
                     {
-                        return BadRequest(new ApiResponse(400, fileDto.ErrorMessage));
+                        WorkgroupFile existingFile= (WorkgroupFile) file;
+                        existingFiles.Add(new WorkgroupFile
+                        {
+                            Path = existingFile.Path,
+                            Name = existingFile.Name ?? "",
+                            Type = "question"
+                        });
                     }
-
-                    uploadedFiles.Add(fileDto);
                 }
 
-                existingTask.Files = uploadedFiles.Select(f => new WorkgroupFile()
+                // Save new files
+                var newFiles = uploadedFiles.Select(f => new WorkgroupFile
                 {
                     Path = f.Path ?? "",
                     Name = f.Name ?? "",
                     Type = "question"
                 }).ToList();
+
+                // Combine new files with existing files
+                existingTask.Files = newFiles.Concat(existingFiles).ToList();
             }
 
             existingTask.LastUpdateBy = User?.Identity?.Name ?? "";
@@ -344,7 +367,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             status = status.ToLower();
 
-            var taskStatus = new List<string> { "on hold", "completed", "rejected", "canceled" };
+            var taskStatus = new List<string> { "completed", "rejected", "canceled" };
             if (!taskStatus.Contains(status))
             {
                 return BadRequest(new ApiResponse(400,
@@ -399,7 +422,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpPost("{id}/submit-answer")]
         public async Task<ActionResult<ApiResponse>> SubmitAnswer(
             int id, 
-            [FromForm] TaskSubmitDTO taskSubmitDTO)
+            [FromForm, Required] TaskSubmitDTO taskSubmitDTO)
         {
             if (taskSubmitDTO == null || taskSubmitDTO.File == null)
             {
@@ -412,21 +435,11 @@ namespace StudentProjectsCenterSystem.Controllers
                 return NotFound(new ApiResponse(404, "Task not found."));
             }
 
-            var taskStatus = new List<string>()
+            // Ensure the task is not end
+            if (task.End <= DateTime.UtcNow)
             {
-                "submitted",
-                "approved",
-                "canceled",
-                "on hold",
-                "completed"
-            };
-
-            // Ensure the task is not already submitted or in an invalid state
-            if (taskStatus.Contains(task.Status.ToLower()))
-            {
-                return BadRequest(new ApiResponse(400, "The task is already finalized or in a non-submittable state, and cannot accept new submissions."));
+                return BadRequest(new ApiResponse(400, "The task is already finalized."));
             }
-
 
             var uploadedFiles = new List<FileDTO>();
             foreach (var file in taskSubmitDTO.File)

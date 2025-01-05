@@ -6,6 +6,7 @@ using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
@@ -28,11 +29,11 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet]
+        [HttpGet("{PageSize}/{PageNumber}")]
         public async Task<ActionResult<ApiResponse>> GetAll(
             [FromQuery] string? workgroupName = null,
-            [FromQuery] int PageSize = 6,
-            [FromQuery] int PageNumber = 1)
+            int PageSize = 6,
+            int PageNumber = 1)
         {
             Expression<Func<Workgroup, bool>> filter = x => true;
             if (!string.IsNullOrEmpty(workgroupName))
@@ -47,7 +48,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 return new ApiResponse(200, "No Workgroups Found");
             }
 
-            var viewModel = model.Select(w =>
+            var workgroupDTOs = model.Select(w =>
             {
                 var userProjects = w?.Project?.UserProjects ?? new List<UserProject>();
                 var customer = userProjects.FirstOrDefault(u => u.Role == "customer");
@@ -69,15 +70,21 @@ namespace StudentProjectsCenterSystem.Controllers
                 };
             });
 
-            return Ok(new ApiResponse(200, "Workgroups retrieved successfully", viewModel));
+            int workgroups_count = await unitOfWork.workgroupRepository.Count(filter);
+
+            return new ApiResponse(200, "Workgroups retrieved successfully", new
+            {
+                Total = workgroups_count,
+                Workgroups = workgroupDTOs
+            });
         }
 
 
-        [HttpGet("get-all-for-user")]
+        [HttpGet("get-all-for-user/{PageSize}/{PageNumber}")]
         [Authorize]
         public async Task<ActionResult<ApiResponse>> GetAllForUser(
-            [FromQuery] int pageSize = 6,
-            [FromQuery] int pageNumber = 1)
+            int PageSize = 6,
+            int PageNumber = 1)
         {
 
 
@@ -90,11 +97,11 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
             // Filter workgroups where the logged-in user is associated
-            Expression<Func<Workgroup, bool>> filter = x =>
+            Expression<Func<Workgroup, bool>> filter = x => x.Project != null &&
                 x.Project.UserProjects.Any(up => up.UserId == userId);
 
 
-            var workgroups = await unitOfWork.workgroupRepository.GetAll(filter, pageSize, pageNumber, "Project.UserProjects.User");
+            var workgroups = await unitOfWork.workgroupRepository.GetAll(filter, PageSize, PageNumber, "Project.UserProjects.User");
             if (!workgroups.Any())
             {
                 return Ok(new ApiResponse(200, "No Workgroups Found for the user."));
@@ -108,7 +115,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 .FirstOrDefault();
 
             // Transform data into DTO
-            var viewModel = workgroups.Select(w =>
+            var workgroupDTOs = workgroups.Select(w =>
             {
                 var userProjects = w?.Project?.UserProjects ?? new List<UserProject>();
                 var customer = userProjects.FirstOrDefault(u => u.Role == "customer");
@@ -128,7 +135,13 @@ namespace StudentProjectsCenterSystem.Controllers
                 };
             });
 
-            return Ok(new ApiResponse(200, "Workgroups retrieved successfully for the user.", viewModel));
+            int workgroups_count = await unitOfWork.workgroupRepository.Count(filter);
+
+            return new ApiResponse(200, "Workgroups retrieved successfully for the user.", new
+            {
+                Total = workgroups_count,
+                Workgroups = workgroupDTOs
+            });
         }
 
 

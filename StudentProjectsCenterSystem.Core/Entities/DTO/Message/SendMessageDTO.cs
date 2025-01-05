@@ -9,8 +9,8 @@ namespace StudentProjectsCenter.Core.Entities.DTO.Messages
 {
     public class SendMessageDTO
     {
-        [Required]
-        public string WorkgroupName { get; set; } = string.Empty;
+        //[Required]
+        //public string WorkgroupName { get; set; } = string.Empty;
 
         [Required]
         public string Message { get; set; } = string.Empty;
