@@ -214,8 +214,8 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             // Check if dates are in the future
-            if ((existingTask.Start != taskDto.Start && existingTask.Start < DateTime.UtcNow)
-                || (existingTask.End != taskDto.End && existingTask.End < DateTime.UtcNow))
+            if ((existingTask.Start != taskDto.Start && taskDto.Start < DateTime.UtcNow)
+                || (existingTask.End != taskDto.End && taskDto.End < DateTime.UtcNow))
                 return BadRequest(new ApiResponse(400, "Dates must not be in the past."));
 
             existingTask.Start = taskDto.Start;
@@ -429,10 +429,26 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiResponse(400, "A valid file is required."));
             }
 
-            var task = await unitOfWork.taskRepository.GetById(id);
+            var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(studentId))
+            {
+                return Unauthorized(new ApiResponse(401, "Student id not Find."));
+            }
+
+            //var task = await unitOfWork.taskRepository.GetById(id);
+
+            Expression<Func<WorkgroupTask, bool>> filter = t => t.Id == id
+                && t.Workgroup.Project != null &&
+                    t.Workgroup.Project.UserProjects
+                        .Any(u => u.Role == "student" && u.UserId == studentId);
+
+            var tasks = await unitOfWork.taskRepository.GetAll(filter, "Workgroup.Project.UserProjects");
+
+            var task = tasks.FirstOrDefault();
             if (task == null)
             {
-                return NotFound(new ApiResponse(404, "Task not found."));
+                return NotFound(new ApiResponse(404, "Task or student not found."));
             }
 
             // Ensure the task is not end

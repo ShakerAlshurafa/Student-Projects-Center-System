@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.DTO.Project;
@@ -16,13 +15,11 @@ namespace StudentProjectsCenter.Controllers.project
     public class ProjectsController : ControllerBase
     {
         private readonly IUnitOfWork unitOfWork;
-        private readonly IMapper mapper;
         private readonly UserManager<LocalUser> userManager;
 
-        public ProjectsController(IUnitOfWork unitOfWork, IMapper mapper, UserManager<LocalUser> userManager)
+        public ProjectsController(IUnitOfWork unitOfWork, UserManager<LocalUser> userManager)
         {
             this.unitOfWork = unitOfWork;
-            this.mapper = mapper;
             this.userManager = userManager;
         }
 

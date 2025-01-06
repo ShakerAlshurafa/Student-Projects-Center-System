@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StudentProjectsCenter.Core.Entities.DTO.Project;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
@@ -23,8 +23,11 @@ namespace StudentProjectsCenterSystem.Controllers
         private readonly UserManager<LocalUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
-        public UsersController(IUnitOfWork unitOfWork, IMapper mapper
-                            , UserManager<LocalUser> userManager, RoleManager<IdentityRole> roleManager)
+        public UsersController(
+            IUnitOfWork unitOfWork, 
+            IMapper mapper, 
+            UserManager<LocalUser> userManager, 
+            RoleManager<IdentityRole> roleManager)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
@@ -62,8 +65,8 @@ namespace StudentProjectsCenterSystem.Controllers
         [Authorize(Roles = "admin")]
         [HttpGet("get-with-pagination/{PageSize}/{PageNumber}")]
         public async Task<ActionResult<ApiResponse>> GetWithPagination(
-            [FromQuery] string? userName = null, 
-            int PageSize = 6, 
+            [FromQuery] string? userName = null,
+            int PageSize = 6,
             int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.EmailConfirmed;
@@ -152,7 +155,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [HttpGet("students/{PageSize}/{PageNumber}")]
         public async Task<ActionResult<ApiResponse>> GetStudents(
-            int PageSize = 6, 
+            int PageSize = 6,
             int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
@@ -197,7 +200,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [HttpGet("customers/{PageSize}/{PageNumber}")]
         public async Task<ActionResult<ApiResponse>> GetCustomers(
-            int PageSize = 6, 
+            int PageSize = 6,
             int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
@@ -293,7 +296,7 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             var user = await userManager.FindByIdAsync(userId);
-            if(user == null)
+            if (user == null)
             {
                 return NotFound($"User with ID {userId} not found.");
             }

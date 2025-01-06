@@ -13,6 +13,7 @@ namespace StudentProjectsCenterSystem.Core.IRepositories
         public IFileRepository fileRepository { get; set; }
         public ITermRepository termRepository { get; set; }
         public IMessageRepository messageRepository { get; set; }
+        public ICelenderRepository celenderRepository { get; set; }
 
 
         public Task<int> save();

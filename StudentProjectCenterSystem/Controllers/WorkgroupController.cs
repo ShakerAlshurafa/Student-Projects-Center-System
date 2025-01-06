@@ -6,8 +6,8 @@ using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
-using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
+using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
@@ -159,7 +159,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             var role = "";
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if(userId != null)
+            if (userId != null)
             {
                 role = workgroup.Project?.UserProjects
                         .Where(u => u.UserId == userId)
@@ -174,8 +174,9 @@ namespace StudentProjectsCenterSystem.Controllers
             var customer = userProjects.FirstOrDefault(u => u.Role == "customer")?.User;
             var students = userProjects
                         .Where(u => u.Role == "student")
-                        .Select(u => new WorkgroupUsersDTO(){
-                            FullName= string.Join(" ", [u?.User.FirstName, u?.User.MiddleName, u?.User.LastName]),
+                        .Select(u => new WorkgroupUsersDTO()
+                        {
+                            FullName = string.Join(" ", [u?.User.FirstName, u?.User.MiddleName, u?.User.LastName]),
                             Email = u?.User.Email ?? "",
                             Role = u?.Role ?? ""
                         })
@@ -195,11 +196,11 @@ namespace StudentProjectsCenterSystem.Controllers
                     Role = "customer"
                 },
             };
-            foreach(var student in students)
+            foreach (var student in students)
             {
                 members.Add(student);
             }
-            if(co_supervisor != null)
+            if (co_supervisor != null)
             {
                 members.Add(new WorkgroupUsersDTO
                 {
@@ -214,7 +215,8 @@ namespace StudentProjectsCenterSystem.Controllers
                 Name = workgroup.Name,
                 Role = (role == "" ? null : role),
                 Progress = workgroup.Progress,
-                Members = members.ToList()
+                Members = members.ToList(),
+                ProjectId = workgroup?.Project?.Id
             };
 
             return Ok(new ApiResponse(200, "Workgroup retrieved successfully", workgroupDto));
