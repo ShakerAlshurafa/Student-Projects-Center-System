@@ -21,14 +21,14 @@ namespace StudentProjectsCenter.Services
                     t.Status.ToLower() == "not started" 
                     && t.Start <= DateTime.UtcNow, 
                 "Status", 
-                "In Progress"
+                "in progress"
             );
             await taskStatusUpdater.UpdateAsync(
                 t => 
                     (t.Status.ToLower() == "in progress" || t.Status.ToLower() == "rejected") 
                     && t.End <= DateTime.UtcNow,
                 "Status",
-                "Overdue"
+                "overdue"
             );
         }
     }

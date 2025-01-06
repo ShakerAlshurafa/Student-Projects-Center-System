@@ -18,6 +18,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         public IFileRepository fileRepository { get; set; }
         public ITermRepository termRepository { get; set; }
         public IMessageRepository messageRepository { get; set; }
+        public ICelenderRepository celenderRepository { get; set; }
 
 
         public UnitOfWork(ApplicationDbContext dbContext)
@@ -32,6 +33,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             termRepository = new TermRepository(dbContext);
             messageRepository = new MessageRepository(dbContext);
             fileRepository = new FileRepository(dbContext);
+            celenderRepository = new CelenderRepository(dbContext);
         }
 
         public async Task<int> save() => await dbContext.SaveChangesAsync();

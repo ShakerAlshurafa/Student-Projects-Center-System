@@ -64,13 +64,13 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 Company = customer?.User?.CompanyName
                                     ?? "No Customer Assigned",
                 Team = project?.UserProjects?.Where(up => up.Role == "student" && !up.IsDeleted)?
-                                    .Select(up => new StudentDTO
+                                    .Select(up => new TeamDTO
                                     {
                                         Id = up.User?.Id ?? string.Empty,
                                         Name = $"{up.User?.FirstName} {up.User?.LastName}".Trim()
                                     })
                                     .ToList()
-                                    ?? new List<StudentDTO>(),
+                                    ?? new List<TeamDTO>(),
 
                 Favorite = project?.Favorite ?? false,
 

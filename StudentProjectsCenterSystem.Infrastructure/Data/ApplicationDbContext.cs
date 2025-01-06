@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenter.Core.Entities.Domain;
 using StudentProjectsCenter.Core.Entities.Domain.Terms;
+using StudentProjectsCenter.Core.Entities.Domain.workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
@@ -46,5 +47,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
         public DbSet<Term> Terms { get; set; }
 
         public DbSet<Message> Messages { get; set; }
+        public DbSet<Celender> Celenders { get; set; }
     }
 }

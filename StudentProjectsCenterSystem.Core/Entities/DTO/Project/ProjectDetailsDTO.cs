@@ -19,7 +19,7 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Project
         public string CustomerId { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string Company { get; set; } = string.Empty;
-        public List<StudentDTO> Team { get; set; } = new List<StudentDTO>();
+        public List<TeamDTO> Team { get; set; } = new List<TeamDTO>();
         public string Status { get; set; } = string.Empty;
         public string? ChangeStatusNotes { get; set; }
         public DateTime? ChangeStatusAt { get; set; }

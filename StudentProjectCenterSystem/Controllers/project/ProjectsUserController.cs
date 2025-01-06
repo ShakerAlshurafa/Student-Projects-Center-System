@@ -58,11 +58,10 @@ namespace StudentProjectsCenter.Controllers.project
             var projectDTOs = mapper.Map<List<MyProjectDTO>>(projects);
 
             int projects_count = await unitOfWork.projectRepository.Count(filter);
-            var page_count = (int)Math.Ceiling((double)projects_count / PageSize);
 
             return new ApiResponse(200, "Projects retrieved successfully", new
             {
-                TotalPages = page_count,
+                Total = projects_count,
                 Projects = projectDTOs
             });
         }
@@ -184,5 +183,107 @@ namespace StudentProjectsCenter.Controllers.project
             return Ok(new ApiResponse(200, "Student removed successfully."));
         }
 
+
+        [Authorize(Roles = "supervisor,admin")]
+        [HttpPost("co-supervisor")]
+        public async Task<ActionResult<ApiResponse>> AddCoSupervisor(
+            [Required] int projectId,
+            [Required] CreateCoSupervisorDTO supervisor)
+        {
+
+            var existingProject = await unitOfWork.projectRepository.GetById(projectId, "UserProjects");
+            if (existingProject == null)
+            {
+                return NotFound(new ApiResponse(404, "Project not found."));
+            }
+
+            var existingUserProject = existingProject.UserProjects
+                .FirstOrDefault(u => u.UserId == supervisor.userId);
+
+            if (existingUserProject != null)
+            {
+                if (existingUserProject.IsDeleted)
+                {
+                    // Change IsDeleted to false
+                    existingUserProject.IsDeleted = false;
+                    existingUserProject.Role = "co-supervisor";
+                    existingUserProject.DeletedNotes = null;
+                }
+                else if (existingUserProject.Role == "co-supervisor")
+                {
+                    return BadRequest(new ApiResponse(400, "A co-supervisor already exists and is active."));
+                }
+                else
+                {
+                    return BadRequest(new ApiResponse(400, "User already assigned to the project with a different role."));
+                }
+            }
+            else
+            {
+                var user = await userManager.FindByIdAsync(supervisor.userId);
+                if (user == null)
+                {
+                    return BadRequest(new ApiValidationResponse(new List<string> { $"User with ID {supervisor.userId} not found." }));
+                }
+
+                existingProject.UserProjects.Add(new UserProject { UserId = supervisor.userId, Role = "co-supervisor" });
+            }
+
+
+            // Save the changes
+            unitOfWork.projectRepository.Update(existingProject);
+
+            // Save changes to the database
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Failed to add Co-Supervisor."));
+            }
+
+            return Ok(new ApiResponse(200, "Co-Supervisor added successfully."));
+        }
+
+        [Authorize(Roles = "supervisor,admin")]
+        [HttpDelete("{projectId}/co-supervisor")]
+        public async Task<ActionResult<ApiResponse>> DeleteCoSupervisor(
+            int projectId,
+            [FromQuery, Required] string co_supervisorId,
+            [FromBody] NotesDTO notes)
+        {
+
+            // Fetch the project and include UserProjects to check if the student exists
+            var existingProject = await unitOfWork.projectRepository.GetById(projectId, "UserProjects");
+            if (existingProject == null)
+            {
+                return NotFound(new ApiResponse(404, "Project not found."));
+            }
+
+            // Find the student entry in the UserProjects collection
+            var co_supervisorEntry = existingProject.UserProjects
+                                .FirstOrDefault(up => up.UserId == co_supervisorId && up.Role == "co-supervisor");
+
+            if (co_supervisorEntry == null)
+            {
+                return NotFound(new ApiResponse(404, "Co-Supervisor not found in this project."));
+            }
+
+            co_supervisorEntry.IsDeleted = true;
+            co_supervisorEntry.DeletedNotes = notes.Notes;
+            co_supervisorEntry.DeletededAt = DateTime.UtcNow;
+
+            //// Remove the student entry from the UserProjects collection
+            //existingProject.UserProjects.Remove(supervisorEntry);
+
+            // Save the changes
+            unitOfWork.projectRepository.Update(existingProject);
+
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Failed to remove the Co-Supervisor from the project."));
+            }
+
+            return Ok(new ApiResponse(200, "Co-Supervisor removed successfully."));
+        }
     }
 }
