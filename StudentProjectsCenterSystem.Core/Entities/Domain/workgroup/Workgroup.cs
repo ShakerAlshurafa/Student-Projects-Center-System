@@ -1,4 +1,5 @@
 ﻿using StudentProjectsCenter.Core.Entities.Domain;
+using StudentProjectsCenter.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using System.Text.Json.Serialization;
 
@@ -20,5 +21,9 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
         // One-to-Many Relationship with Task
         [JsonIgnore]
         public ICollection<WorkgroupTask> Tasks { get; set; } = new List<WorkgroupTask>();
+
+        // One-to-Many Relationship with Celender
+        [JsonIgnore]
+        public ICollection<Celender> CelenderEvents { get; set; } = new List<Celender>();
     }
 }
