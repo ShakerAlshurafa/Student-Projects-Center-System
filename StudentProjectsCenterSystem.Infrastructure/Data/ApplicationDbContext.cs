@@ -30,6 +30,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Data
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.ProjectDetailsSectionConfiguration).Assembly);
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.UserProjectConfiguration).Assembly);
             builder.ApplyConfigurationsFromAssembly(typeof(Configurations.LocalUserConfiguration).Assembly);
+            builder.ApplyConfigurationsFromAssembly(typeof(Configurations.CelenderConfiguration).Assembly);
             base.OnModelCreating(builder);
         }
 

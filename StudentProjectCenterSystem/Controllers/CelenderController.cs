@@ -15,7 +15,7 @@ using System.Security.Claims;
 
 namespace StudentProjectsCenter.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/celender")]
     [ApiController]
     public class CelenderController : ControllerBase
@@ -31,10 +31,13 @@ namespace StudentProjectsCenter.Controllers
             this.userManager = userManager;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<ApiResponse>> Get()
+        [HttpGet("{workgroupId}")]
+        public async Task<ActionResult<ApiResponse>> Get(int workgroupId)
         {
-            Expression<Func<Celender, bool>> filter = c => c.EndAt >= DateTime.UtcNow;
+            Expression<Func<Celender, bool>> filter = c =>
+                (c.EndAt >= DateTime.UtcNow || c.AllDay)
+                && c.WorkgroupId == workgroupId;
+
             var events = await unitOfWork.celenderRepository.GetAll(filter);
             var eventsDto = new List<CelenderEventDTO>();
 
@@ -56,14 +59,30 @@ namespace StudentProjectsCenter.Controllers
             return Ok(new ApiResponse(200, result: eventsDto));
         }
 
-        [HttpPost]
-        public async Task<ActionResult<ApiResponse>> Create([Required] CreateCelenderEventDTO eventDTO)
+        [HttpPost("{workgroupId}")]
+        public async Task<ActionResult<ApiResponse>> Create(
+            int workgroupId,
+            [Required] CreateCelenderEventDTO eventDTO)
         {
             var CelenderEvent = mapper.Map<Celender>(eventDTO);
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             CelenderEvent.AuthorId = userId ?? "";
 
+            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId, "Project.UserProjects");
+            if(workgroup == null)
+            {
+                return NotFound(new ApiResponse(404, "Workgropu not found!"));
+            }
+
+            var existInWorkgroup = workgroup.Project?.UserProjects?.Any(u => u.UserId ==  userId) ?? false;
+            if(!existInWorkgroup)
+            {
+                return BadRequest(new ApiResponse(400, "You are not in this workgroup!!"));
+            }
+
+
+            CelenderEvent.Workgroup = workgroup;
             await unitOfWork.celenderRepository.Create(CelenderEvent);
 
             int successSave = await unitOfWork.save();
@@ -72,7 +91,10 @@ namespace StudentProjectsCenter.Controllers
                 return StatusCode(500, new ApiResponse(500, "Create Failed"));
             }
 
-            return CreatedAtAction(nameof(Create), new { id = CelenderEvent.Id }, new ApiResponse(201, result: CelenderEvent));
+            var celenderEventsDto = mapper.Map<CelenderEventDTO>(CelenderEvent);
+            celenderEventsDto.Author = User?.Identity?.Name ?? "";
+
+            return CreatedAtAction(nameof(Create), new { id = CelenderEvent.Id }, new ApiResponse(201, result: celenderEventsDto));
         }
 
         [HttpPut("{id}")]

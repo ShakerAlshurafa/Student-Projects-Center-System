@@ -274,7 +274,12 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("WorkgroupId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("WorkgroupId");
 
                     b.ToTable("Celenders");
                 });
@@ -641,6 +646,16 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
                     b.Navigation("Workgroup");
                 });
 
+            modelBuilder.Entity("StudentProjectsCenter.Core.Entities.Domain.workgroup.Celender", b =>
+                {
+                    b.HasOne("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", "Workgroup")
+                        .WithMany("CelenderEvents")
+                        .HasForeignKey("WorkgroupId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Workgroup");
+                });
+
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.project.ProjectDetailsSection", b =>
                 {
                     b.HasOne("StudentProjectsCenterSystem.Core.Entities.project.Project", "Project")
@@ -710,6 +725,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("StudentProjectsCenterSystem.Core.Entities.Domain.workgroup.Workgroup", b =>
                 {
+                    b.Navigation("CelenderEvents");
+
                     b.Navigation("Message");
 
                     b.Navigation("Project");

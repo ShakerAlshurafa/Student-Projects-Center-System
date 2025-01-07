@@ -93,9 +93,8 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-
-        [HttpPost("send-password-reset-link")]
-        public async Task<IActionResult> SendPasswordResetLink([Required] string email)
+        [HttpPost("send-reset-password-link/{email}")]
+        public async Task<IActionResult> SendPasswordResetLink(string email)
         {
             var user = await userManager.FindByEmailAsync(email);
             if (user == null)
@@ -128,8 +127,9 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "Password reset link has been sent. Please check your email."));
         }
 
-        [HttpPost("password-reset")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model, string token)
+
+        [HttpPost("reset-password/{token}")]
+        public async Task<IActionResult> ResetPassword([FromBody, Required] ResetPasswordDTO model, string token)
         {
             if (!ModelState.IsValid)
             {
