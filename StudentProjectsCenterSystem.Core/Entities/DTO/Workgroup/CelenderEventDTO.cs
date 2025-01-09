@@ -7,7 +7,7 @@
         public string? Description { get; set; } = string.Empty;
         public string Author { get; set; } = string.Empty;
         public bool AllDay { get; set; } = false;
-        public DateTime? StartAt { get; set; }
-        public DateTime? EndAt { get; set; }
+        public string? StartAt { get; set; }
+        public string? EndAt { get; set; }
     }
 }

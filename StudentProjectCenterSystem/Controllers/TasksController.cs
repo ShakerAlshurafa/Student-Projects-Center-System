@@ -11,7 +11,6 @@ using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
@@ -90,7 +89,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [Authorize(Roles = "supervisor")]
         [HttpPost("{workgroupId}")]
         public async Task<ActionResult<ApiResponse>> Create(
-            int workgroupId, 
+            int workgroupId,
             [FromForm, Required] TaskCreateDTO taskDto)
         {
             //if (!taskDto.ValidExtensions.Any())
@@ -197,7 +196,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [Authorize(Roles = "supervisor")]
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
-            int id, 
+            int id,
             [FromForm, Required] TaskUpdateDTO taskDto)
         {
             // Validate taskDto
@@ -259,7 +258,7 @@ namespace StudentProjectsCenterSystem.Controllers
                     }
                     else // it's an existing file
                     {
-                        WorkgroupFile existingFile= (WorkgroupFile) file;
+                        WorkgroupFile existingFile = (WorkgroupFile)file;
                         existingFiles.Add(new WorkgroupFile
                         {
                             Path = existingFile.Path,
@@ -309,7 +308,8 @@ namespace StudentProjectsCenterSystem.Controllers
             var questionFiles = new List<FileDTO>();
             var answerFiles = new List<FileDTO>();
 
-            if (task.Files != null) {
+            if (task.Files != null)
+            {
                 foreach (var file in task.Files.ToList())
                 {
                     if (file.Type == "question")
@@ -356,7 +356,7 @@ namespace StudentProjectsCenterSystem.Controllers
         [Authorize(Roles = "supervisor")]
         [HttpPut("{id}/change-status")]
         public async Task<ActionResult<ApiResponse>> ChangeStatus(
-            int id, 
+            int id,
             [Required, FromBody] string status)
         {
             // Validate the status input
@@ -421,7 +421,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
         [HttpPost("{id}/submit-answer")]
         public async Task<ActionResult<ApiResponse>> SubmitAnswer(
-            int id, 
+            int id,
             [FromForm, Required] TaskSubmitDTO taskSubmitDTO)
         {
             if (taskSubmitDTO == null || taskSubmitDTO.File == null)

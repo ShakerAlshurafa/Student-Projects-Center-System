@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
@@ -13,26 +14,29 @@ namespace StudentProjectsCenterSystem.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthRepository userRepository;
+        private readonly IAuthRepository authRepository;
         private readonly UserManager<LocalUser> userManager;
         private readonly IEmailService emailService;
+        private readonly IConfiguration configuration;
 
         public AuthController(
-            IAuthRepository userRepository, 
+            IAuthRepository authRepository, 
             UserManager<LocalUser> userManager, 
-            IEmailService emailService)
+            IEmailService emailService,
+            IConfiguration configuration)
         {
-            this.userRepository = userRepository;
+            this.authRepository = authRepository;
             this.userManager = userManager;
             this.emailService = emailService;
+            this.configuration = configuration;
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
+        public async Task<IActionResult> Login([FromBody,Required] LoginRequestDTO model)
         {
             if (ModelState.IsValid)
             {
-                var response = await userRepository.Login(model);
+                var response = await authRepository.Login(model);
 
                 if (!response.IsSuccess)
                 {
@@ -48,9 +52,9 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterationRequestDTO model)
+        public async Task<IActionResult> Register([FromBody, Required] RegisterationRequestDTO model)
         {
-            var response = await userRepository.Register(model);
+            var response = await authRepository.Register(model);
 
             if (response is ApiValidationResponse validationResponse)
             {
@@ -70,30 +74,36 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpGet("confirm-email")]
-        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        public async Task<IActionResult> ConfirmEmail([Required] string userId, [Required] string token)
         {
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
             {
-                return BadRequest(new { message = "UserId and Token are required." });
+                return BadRequest(new { message = "Email and Token are required." });
             }
+
 
             var user = await userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                return NotFound(new { message = "User not found." });
+                return NotFound(new ApiResponse(404, "User not found."));
             }
 
             var result = await userManager.ConfirmEmailAsync(user, token);
             if (!result.Succeeded)
             {
-                return BadRequest(new { message = "Email confirmation failed.", errors = result.Errors });
+                return BadRequest(new
+                {
+                    message = "Email confirmation failed.",
+                    errors = result.Errors.Select(e => e.Description)
+                });
             }
 
-            return Ok(new { message = "Email confirmed successfully. You can now log in." });
+            var frontendUrl = configuration["FrontendBaseUrl"];
+            return Redirect($"{frontendUrl}/confirm-email");
         }
 
 
-        [HttpPost("send-reset-password-link/{email}")]
+        [HttpPost("send-reset-code/{email}")]
         public async Task<IActionResult> SendPasswordResetLink(string email)
         {
             var user = await userManager.FindByEmailAsync(email);
@@ -102,34 +112,33 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiValidationResponse(new List<string> { $"Email '{email}' not found." }));
             }
 
-            var token = await userManager.GeneratePasswordResetTokenAsync(user);
-            var resetPasswordLink = Url.Action(
-                "ResetPassword",
-                "Auth",
-                new { token, email },
-                Request.Scheme
-            );
+            var resetCode = new Random().Next(100000, 999999).ToString();
 
-            var subject = "Reset Password Request";
-            // HTML email body with a button
+            user.PasswordResetCode = resetCode;
+            user.PasswordResetCodeExpiration = DateTime.UtcNow.AddMinutes(10); // Code valid for 10 minutes
+            await userManager.UpdateAsync(user);
+
+            var subject = "Password Reset Code";
             var message = $@"
-                <p>Please click the button below to reset your password:</p>
-                <br>
-                <a href='{resetPasswordLink}' style='display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #007bff; text-decoration: none; border-radius: 5px;'>Reset Password</a>
+                <p>You requested a password reset. Use the following 6-digit code to reset your password:</p>
+                <h2>{resetCode}</h2>
+                <p>This code is valid for 10 minutes.</p>
                 <p>If you did not request a password reset, please ignore this email.</p>";
 
             var emailSent = await emailService.SendEmailAsync(email, subject, message, isHtml: true);
-
             if (!emailSent.IsSuccess)
             {
                 return StatusCode(500, $"An error occurred while sending the message: {emailSent.ErrorMessage}");
             }
+
             return Ok(new ApiResponse(200, "Password reset link has been sent. Please check your email."));
         }
 
 
-        [HttpPost("reset-password/{token}")]
-        public async Task<IActionResult> ResetPassword([FromBody, Required] ResetPasswordDTO model, string token)
+        [HttpPost("reset-forgotten-password/{email}")]
+        public async Task<IActionResult> ResetForgottenPassword(
+            string email,
+            [FromBody, Required] ResetPasswordDTO model)
         {
             if (!ModelState.IsValid)
             {
@@ -141,21 +150,60 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiResponse(400, "Passwords do not match."));
             }
 
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null || user.PasswordResetCode != model.ResetCode || user.PasswordResetCodeExpiration < DateTime.UtcNow)
+            {
+                return BadRequest(new ApiValidationResponse(new List<string> { "Invalid or expired reset code." }));
+            }
+
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest(new ApiResponse(400, "Invalid token."));
+            }
+
+            var result = await userManager.ResetPasswordAsync(user, token, model.newPassword);
+            if (!result.Succeeded)
+            {
+                return BadRequest(new ApiValidationResponse(result.Errors.Select(e => e.Description).ToList()));
+            }
+
+            // Clear the reset code after successful password reset
+            user.PasswordResetCode = null;
+            user.PasswordResetCodeExpiration = null;
+            await userManager.UpdateAsync(user);
+
+            return Ok(new ApiResponse(200, "Password has been reset successfully."));
+        }
+
+
+        [Authorize]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody, Required] ResetPasswordDTO model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ApiResponse(400, "Invalid input. Please check your information."));
+            }
+
+            if (model.newPassword != model.confirmNewPassword)
+            {
+                return BadRequest(new ApiResponse(400, "Passwords do not match."));
+            }
+
+            var user = await userManager.GetUserAsync(User); // Get user object
+            if (user == null)
+            {
+                return BadRequest(new ApiValidationResponse(new List<string> { $"User not found." }));
+            }
+
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
             if (string.IsNullOrEmpty(token))
             {
                 return BadRequest(new ApiResponse(400, "Invalid or missing token."));
             }
 
-            // Decode the token
-            string decodedToken = HttpUtility.UrlDecode(token);
-
-            var user = await userManager.FindByEmailAsync(model.Email);
-            if (user == null)
-            {
-                return NotFound(new ApiResponse(404, "User with the provided email not found."));
-            }
-
-            var result = await userManager.ResetPasswordAsync(user, decodedToken, model.newPassword);
+            var result = await userManager.ResetPasswordAsync(user, token, model.newPassword);
             if (result.Succeeded)
             {
                 return Ok(new ApiResponse(200, "Password reset successfully."));
@@ -164,7 +212,6 @@ namespace StudentProjectsCenterSystem.Controllers
             var errors = result.Errors.Select(e => e.Description).ToList();
             return BadRequest(new ApiValidationResponse(errors, 400));
         }
-
 
     }
 }

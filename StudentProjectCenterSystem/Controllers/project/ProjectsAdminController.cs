@@ -126,8 +126,8 @@ namespace StudentProjectsCenter.Controllers.project
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                                              .ToList();
+                    .Select(e => e.ErrorMessage).ToList();
+
                 return BadRequest(new ApiValidationResponse(errors));
             }
 

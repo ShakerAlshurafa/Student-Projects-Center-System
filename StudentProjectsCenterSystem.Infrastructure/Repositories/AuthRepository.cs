@@ -153,6 +153,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                     var addRolesResult = await userManager.AddToRoleAsync(user, "user");
                     if (!addRolesResult.Succeeded)
                     {
+                        await userManager.DeleteAsync(user);
                         var errors = addRolesResult.Errors.Select(e => e.Description);
                         return new ApiValidationResponse(errors, 400);
                     }

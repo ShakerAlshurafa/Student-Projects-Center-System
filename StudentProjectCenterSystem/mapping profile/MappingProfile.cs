@@ -3,6 +3,7 @@ using StudentProjectsCenter.Core.Entities.Domain;
 using StudentProjectsCenter.Core.Entities.Domain.Terms;
 using StudentProjectsCenter.Core.Entities.Domain.workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Message;
+using StudentProjectsCenter.Core.Entities.DTO.Profile;
 using StudentProjectsCenter.Core.Entities.DTO.Terms;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
@@ -40,6 +41,8 @@ namespace StudentProjectsCenterSystem.mapping_profile
             CreateMap<LocalUser, UserDTO>().ReverseMap();
             CreateMap<LocalUser, UserInfoDto>().ReverseMap();
             CreateMap<LocalUser, GetByRoleDTO>().ReverseMap();
+
+            CreateMap<LocalUser, UserProfileDTO>().ReverseMap();
 
             CreateMap<WorkgroupTask, AllTaskDTO>().ReverseMap();
             CreateMap<WorkgroupTask, AllWorkgroupTaskDTO>().ReverseMap();
