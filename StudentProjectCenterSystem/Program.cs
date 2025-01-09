@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StudentProjectsCenter.Core.Entities.DTO;
 using StudentProjectsCenter.Core.IRepositories;
 using StudentProjectsCenter.Infrastructure.Repositories;
 using StudentProjectsCenter.Services;
@@ -44,6 +45,7 @@ namespace StudentProjectCenterSystem
                     Location = ResponseCacheLocation.Any
                 });
             });
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

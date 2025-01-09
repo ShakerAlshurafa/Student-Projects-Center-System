@@ -28,7 +28,7 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
         [HttpPost("{sectionId}")]
         public async Task<ActionResult<ApiResponse>> Create(
             int sectionId, 
-            [FromBody] ProjectDetailsCreateDTO[] projectDetailsDto)
+            [FromBody, Required] ProjectDetailsCreateDTO[] projectDetailsDto)
         {
             // Validate the model state
             if (!ModelState.IsValid)
@@ -38,11 +38,10 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
                                               .ToList();
                 return BadRequest(new ApiValidationResponse(errors));
             }
-
-            // Check if the sction exists
-            if (!await unitOfWork.detailsSectionsRepository.IsExist(sectionId))
+            
+            if (projectDetailsDto == null || !projectDetailsDto.Any())
             {
-                return NotFound(new ApiResponse(404, "Section not found."));
+                return BadRequest(new ApiResponse(400, "No details provided"));
             }
 
             var section = await unitOfWork.detailsSectionsRepository.GetById(sectionId);
@@ -50,32 +49,26 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
             {
                 return NotFound(new ApiResponse(404, "Section not found"));
             }
-
-            var createdDetails = new List<ProjectDetailEntity>();
-
-            foreach (var detail in projectDetailsDto)
+            
+            var models = projectDetailsDto.Select(detail => new ProjectDetailEntity
             {
-                // Create a new ProjectDetails entity
-                var model = new ProjectDetailEntity
-                {
-                    Title = detail.Title,
-                    Description = detail.Description,
-                    IconData = detail.IconData ?? Array.Empty<byte>(),
-                    ProjectDetailsSection = section
-                };
+                Title = detail.Title,
+                Description = detail.Description,
+                IconData = detail.IconData ?? Array.Empty<byte>(),
+                ProjectDetailsSection = section
+            }).ToList();
 
-                await unitOfWork.projectDetailsRepository.Create(model);
-                createdDetails.Add(model);
-            }
+            await unitOfWork.projectDetailsRepository.CreateRange(models);
 
-            // Save all changes at once
-            if (await unitOfWork.save() == 0)
+            // Save all changes
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
             {
                 return StatusCode(500, new ApiResponse(500, "Create operation failed."));
             }
 
             // Return success response with 201 Created status
-            return CreatedAtAction(nameof(Create), new ApiResponse(201, "Details created successfully", createdDetails));
+            return CreatedAtAction(nameof(Create), new ApiResponse(201, "Details created successfully"));
         }
 
 
