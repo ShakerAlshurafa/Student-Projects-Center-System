@@ -6,6 +6,5 @@ namespace StudentProjectsCenterSystem.Core.IRepositories
     public interface IProjectDetailsSectionsRepository : IGenericRepository<ProjectDetailsSection>
     {
         public Task<int> GetSectionId (string name);
-        public Task<List<ProjectDetailsSection>> GetAllByProjecId(int projectId);
     }
 }

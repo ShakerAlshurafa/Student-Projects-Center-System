@@ -4,7 +4,6 @@ using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetailsSection;
-using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
@@ -27,25 +26,31 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
 
         [HttpGet]
         [ResponseCache(CacheProfileName = "defaultCache")]
-        public async Task<ActionResult<ApiResponse>> GetAllSection([FromQuery, Required] int projectId)
+        public async Task<ActionResult<ApiResponse>> GetAllSection(
+            [FromQuery, Required] int projectId)
         {
-            //var checkProjectId = await unitOfWork.projectRepository.IsExistAsync(projectId);
+            Expression<Func<ProjectDetailsSection, bool>> filter = s => s.ProjectId == projectId;
+            var model = await unitOfWork.detailsSectionsRepository.GetAll(filter, "Project");
 
-            var model = await unitOfWork.detailsSectionsRepository.GetAllByProjecId(projectId);
-
-            if (!model.Any())
+            if (model == null)
             {
-                return new ApiResponse(404, "No Section Found");
+                return NotFound(new ApiResponse(404, "No Section Found"));
             }
 
             var sectionDtos = mapper.Map<List<ProjectDetailsSectionDTO>>(model);
+            if(sectionDtos == null)
+            {
+                return Ok(new ApiResponse(200, "No Section found"));
+            }
 
-            return new ApiResponse(200, "Sections retrieved successfully", sectionDtos);
+            return Ok(new ApiResponse(200, "Sections retrieved successfully", sectionDtos));
         }
 
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> Create([Required][FromQuery] int projectId, [FromBody] ProjectDetailsSectionCreateDTO section)
+        public async Task<ActionResult<ApiResponse>> Create(
+            [FromQuery, Required] int projectId, 
+            [FromBody, Required] ProjectDetailsSectionCreateDTO section)
         {
             if (!ModelState.IsValid)
             {
@@ -71,7 +76,8 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
 
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse>> Update(int id, [FromBody] ProjectDetailsSectionCreateDTO section)
+        public async Task<ActionResult<ApiResponse>> Update(int id, 
+            [FromBody, Required] ProjectDetailsSectionCreateDTO section)
         {
             if (!ModelState.IsValid)
             {
@@ -90,12 +96,9 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
             // Update Section fields
             existingSection.Name = section.Name;
 
-            var model = mapper.Map<ProjectDetailsSection>(existingSection);
-
-            // Save the changes
-            unitOfWork.detailsSectionsRepository.Update(model);
+            unitOfWork.detailsSectionsRepository.Update(existingSection);
+            
             int successSave = await unitOfWork.save();
-
             if (successSave == 0)
             {
                 return StatusCode(500, new ApiResponse(500, "Update Failed"));
