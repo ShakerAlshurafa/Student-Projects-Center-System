@@ -51,8 +51,8 @@ namespace StudentProjectsCenter.Controllers
                     Description = ele.Description,
                     Author = author?.UserName ?? "",
                     AllDay = ele.AllDay,
-                    StartAt = ele.StartAt,
-                    EndAt = ele.EndAt,
+                    StartAt = ele.StartAt?.ToString("MM/dd/yyyy hh:mm tt"),
+                    EndAt = ele.EndAt?.ToString("MM/dd/yyyy hh:mm tt"),
                 });
             }
 
@@ -64,25 +64,29 @@ namespace StudentProjectsCenter.Controllers
             int workgroupId,
             [Required] CreateCelenderEventDTO eventDTO)
         {
-            var CelenderEvent = mapper.Map<Celender>(eventDTO);
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            CelenderEvent.AuthorId = userId ?? "";
+            if (eventDTO.EndAt < eventDTO.StartAt)
+            {
+                return BadRequest(new ApiResponse(400, "End date must be later than start date"));
+            }
 
             var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId, "Project.UserProjects");
             if(workgroup == null)
             {
-                return NotFound(new ApiResponse(404, "Workgropu not found!"));
+                return NotFound(new ApiResponse(404, "Workgropu not found"));
             }
 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var existInWorkgroup = workgroup.Project?.UserProjects?.Any(u => u.UserId ==  userId) ?? false;
             if(!existInWorkgroup)
             {
-                return BadRequest(new ApiResponse(400, "You are not in this workgroup!!"));
+                return BadRequest(new ApiResponse(400, "You are not a member of this workgroup0"));
             }
 
+            var CelenderEvent = mapper.Map<Celender>(eventDTO);
 
+            CelenderEvent.AuthorId = userId ?? "";
             CelenderEvent.Workgroup = workgroup;
+
             await unitOfWork.celenderRepository.Create(CelenderEvent);
 
             int successSave = await unitOfWork.save();
@@ -98,19 +102,26 @@ namespace StudentProjectsCenter.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse>> Update(int id, [Required] CreateCelenderEventDTO eventDTO)
+        public async Task<ActionResult<ApiResponse>> Update(
+            int id, 
+            [Required] CreateCelenderEventDTO eventDTO)
         {
-            var CelenderEvent = mapper.Map<Celender>(eventDTO);
+            if(eventDTO.EndAt < eventDTO.StartAt)
+            {
+                return BadRequest(new ApiResponse(400, "End date must be later than start date"));
+            }
 
             var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (CelenderEvent.AuthorId != userId)
-                return BadRequest(new ApiResponse(400, "You are not the author"));
-
             var existingEvent = await unitOfWork.celenderRepository.GetById(id);
 
             if(existingEvent == null)
             {
-                return NotFound(new ApiResponse());
+                return NotFound(new ApiResponse(404, "Event not found"));
+            }
+
+            if (existingEvent.AuthorId != userId)
+            {
+                return BadRequest(new ApiResponse(400, "You are not authorized to modify this event"));
             }
 
             existingEvent.Title = eventDTO.Title;

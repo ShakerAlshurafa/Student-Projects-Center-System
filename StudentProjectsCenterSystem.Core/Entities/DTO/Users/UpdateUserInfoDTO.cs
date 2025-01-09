@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace StudentProjectsCenter.Core.Entities.DTO.Users
+﻿namespace StudentProjectsCenter.Core.Entities.DTO.Users
 {
     public class UpdateUserInfoDTO
     {

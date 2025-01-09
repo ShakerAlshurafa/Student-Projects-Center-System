@@ -7,21 +7,37 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using StudentProjectsCenter.Core.Entities.Domain;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using StudentProjectsCenter.Core.Entities.DTO.Users;
+using StudentProjectsCenterSystem.Core.Entities.project;
+using StudentProjectsCenterSystem.Infrastructure.Repositories;
+using System.Linq.Expressions;
+using StudentProjectsCenter.Core.Entities.DTO.Profile;
+using StudentProjectsCenterSystem.Core.Entities.DTO;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
 
 namespace StudentProjectsCenter.Controllers
 {
+    [Authorize]
     [Route("api/profile")]
     [ApiController]
     public class ProfileController : ControllerBase
     {
         private readonly IWebHostEnvironment _environment;
         private readonly UserManager<LocalUser> _userManager;
+        private readonly IMapper mapper;
 
-        public ProfileController(IWebHostEnvironment environment, UserManager<LocalUser> userManager)
+        public ProfileController(
+            IWebHostEnvironment environment, 
+            UserManager<LocalUser> userManager,
+            IMapper mapper)
         {
             _environment = environment;
             _userManager = userManager;
+            this.mapper = mapper;
         }
+
         /* UploadProfileImage
          * 
          * 
@@ -99,8 +115,31 @@ namespace StudentProjectsCenter.Controllers
         }
         */
 
+        
+        [HttpGet("user-info")]
+        public async Task<ActionResult<ApiResponse>> GetUserInfo()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return NotFound("User not found.");
+            }
 
-        [HttpPut("update-image")]
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound($"User with ID {userId} not found.");
+            }
+
+            var userInfo = mapper.Map<UserProfileDTO>(user);
+
+            var roles = await _userManager.GetRolesAsync(user);
+            userInfo.Role = roles.ToList();
+
+            return Ok(new ApiResponse(200, result: userInfo));
+        }
+
+        [HttpPut("profile-image")]
         public async Task<IActionResult> UpdateProfileImage([Required] IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -179,6 +218,47 @@ namespace StudentProjectsCenter.Controllers
                         Message = $"An error occurred while processing the request. Details: {ex.Message}"
                     });
             }
+        }
+
+
+        [HttpPut("user-info")]
+        public async Task<IActionResult> UpdateUserInfo(UpdateUserProfileDTO userProfileDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage).ToList();
+
+                return BadRequest(new ApiValidationResponse(errors));
+            }
+
+            var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier); // Get logged-in user ID
+            if (userId == null)
+            {
+                return Unauthorized("User is not logged in.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Update user info
+            user.FirstName = userProfileDTO.FirstName;
+            user.MiddleName = userProfileDTO.MiddleName;
+            user.LastName = userProfileDTO.LastName;
+            user.PhoneNumber = userProfileDTO.PhoneNumber;
+            user.Address = userProfileDTO.Address;
+            user.UserName = userProfileDTO.FirstName + "_" + userProfileDTO.LastName;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest("Failed to update user information.");
+            }
+
+            return Ok(new ApiResponse(200, "User information updated successfully."));
         }
 
     }

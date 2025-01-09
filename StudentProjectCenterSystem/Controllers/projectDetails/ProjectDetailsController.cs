@@ -25,9 +25,9 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
         }
 
 
-        [HttpPost]
+        [HttpPost("{sectionId}")]
         public async Task<ActionResult<ApiResponse>> Create(
-            [FromQuery, Required] int sectionId, 
+            int sectionId, 
             [FromBody] ProjectDetailsCreateDTO[] projectDetailsDto)
         {
             // Validate the model state
@@ -46,6 +46,11 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
             }
 
             var section = await unitOfWork.detailsSectionsRepository.GetById(sectionId);
+            if(section == null)
+            {
+                return NotFound(new ApiResponse(404, "Section not found"));
+            }
+
             var createdDetails = new List<ProjectDetailEntity>();
 
             foreach (var detail in projectDetailsDto)
