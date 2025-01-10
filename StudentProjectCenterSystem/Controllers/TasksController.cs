@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Pqc.Crypto.Lms;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using StudentProjectsCenterSystem.Core.Entities;
@@ -11,6 +12,7 @@ using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Security.Claims;
+using System.Threading.Channels;
 
 namespace StudentProjectsCenterSystem.Controllers
 {
@@ -124,7 +126,8 @@ namespace StudentProjectsCenterSystem.Controllers
 
             var countCompleteTasks = await unitOfWork.taskRepository.Count(t =>
                 t.WorkgroupId == workgroupId && t.Status.ToLower() == "complete");
-            var countAllTasks = await unitOfWork.taskRepository.Count(t => t.WorkgroupId == workgroupId);
+            var countAllTasks = await unitOfWork.taskRepository.Count(t =>
+                    t.WorkgroupId == workgroup.Id && t.Status.ToLower() != "canceled");
 
             if (countAllTasks == 0)
             {
@@ -353,6 +356,22 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, result: taskDto));
         }
 
+        [Authorize]
+        [HttpGet("task-statuses")]
+        public ActionResult<ApiResponse> GetTaskStatuses()
+        {
+            return Ok(new ApiResponse(200, result: new
+            {
+                NotStarted = "Task has been created but work has not yet begun.",
+                InProgress = "Task is currently being worked on.",
+                Submitted = "Task has been completed and submitted for review.",
+                Completed = "Task is finished",
+                Rejected = "Task submission has been reviewed and requires changes or adjustments",
+                Canceled = "Task is no longer needed and has been closed"
+            }));
+        }
+
+
         [Authorize(Roles = "supervisor")]
         [HttpPut("{id}/change-status")]
         public async Task<ActionResult<ApiResponse>> ChangeStatus(
@@ -391,7 +410,8 @@ namespace StudentProjectsCenterSystem.Controllers
 
                 var countCompleteTasks = await unitOfWork.taskRepository.Count(t =>
                     t.WorkgroupId == workgroup.Id && t.Status.ToLower() == "complete");
-                var countAllTasks = await unitOfWork.taskRepository.Count(t => t.WorkgroupId == workgroup.Id);
+                var countAllTasks = await unitOfWork.taskRepository.Count(t => 
+                    t.WorkgroupId == workgroup.Id && t.Status.ToLower() != "canceled");
 
                 if (countAllTasks == 0)
                 {

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
@@ -19,8 +19,8 @@ namespace StudentProjectsCenter.Controllers
         private readonly RoleManager<IdentityRole> roleManager;
 
         public RolesController(
-            IUnitOfWork unitOfWork, 
-            UserManager<LocalUser> userManager, 
+            IUnitOfWork unitOfWork,
+            UserManager<LocalUser> userManager,
             RoleManager<IdentityRole> roleManager)
         {
             this.unitOfWork = unitOfWork;
@@ -96,7 +96,7 @@ namespace StudentProjectsCenter.Controllers
         {
             var role = await roleManager.FindByIdAsync(roleId);
 
-            if (role == null)
+            if (role == null || string.IsNullOrEmpty(role.Name))
             {
                 return NotFound(new ApiResponse(404, "Role not found."));
             }
@@ -106,6 +106,12 @@ namespace StudentProjectsCenter.Controllers
                 return BadRequest(new ApiResponse(400, "Not acceptable to remove this system role."));
             }
 
+            // Check if role is assigned to any user
+            var usersInRole = await userManager.GetUsersInRoleAsync(role.Name);
+            if (usersInRole.Count > 0)
+            {
+                return BadRequest(new ApiResponse(400, "Role cannot be deleted as it is assigned to one or more users."));
+            }
 
             // Proceed with role deletion
             var result = await roleManager.DeleteAsync(role);
@@ -173,7 +179,7 @@ namespace StudentProjectsCenter.Controllers
 
             return Ok(new ApiResponse(200, "Role removed from user successfully."));
         }
-        
+
 
     }
 }

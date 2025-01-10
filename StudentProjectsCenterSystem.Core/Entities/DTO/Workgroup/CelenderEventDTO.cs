@@ -1,4 +1,6 @@
-﻿namespace StudentProjectsCenter.Core.Entities.DTO.Workgroup
+﻿using System.Text.Json.Serialization;
+
+namespace StudentProjectsCenter.Core.Entities.DTO.Workgroup
 {
     public class CelenderEventDTO
     {
@@ -7,7 +9,11 @@
         public string? Description { get; set; } = string.Empty;
         public string Author { get; set; } = string.Empty;
         public bool AllDay { get; set; } = false;
-        public string? StartAt { get; set; }
-        public string? EndAt { get; set; }
+
+        //[JsonConverter(typeof(JsonDateTimeConverter))]
+        public DateTimeOffset? StartAt { get; set; }
+
+        //[JsonConverter(typeof(JsonDateTimeConverter))]
+        public DateTimeOffset? EndAt { get; set; }
     }
 }

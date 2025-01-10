@@ -1,13 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
-using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 {
@@ -18,15 +12,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         public ProjectDetailsSectionsRepository(ApplicationDbContext dbContext) : base(dbContext)
         {
             this.dbContext = dbContext;
-        }
-
-        public async Task<List<ProjectDetailsSection>> GetAllByProjecId(int projectId)
-        {
-            var sections = await dbContext.ProjectDetailsSections
-                            .Include(p => p.Project)
-                            .Where(p => p.ProjectId == projectId)
-                            .ToListAsync();
-            return sections;
         }
 
         public async Task<int> GetSectionId(string name)

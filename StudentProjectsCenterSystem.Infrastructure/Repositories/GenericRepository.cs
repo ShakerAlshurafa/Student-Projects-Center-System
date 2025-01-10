@@ -21,6 +21,12 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             await dbContext.Set<T>().AddAsync(model);
         }
 
+        public async Task CreateRange(IEnumerable<T> models)
+        {
+            await dbContext.Set<T>().AddRangeAsync(models);
+        }
+
+
         public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>>? filter, string? includeProperty = null)
         {
 

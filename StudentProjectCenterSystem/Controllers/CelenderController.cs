@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using StudentProjectsCenter.Core.Entities.Domain.workgroup;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
@@ -24,7 +21,10 @@ namespace StudentProjectsCenter.Controllers
         private readonly IMapper mapper;
         private readonly UserManager<LocalUser> userManager;
 
-        public CelenderController(IUnitOfWork unitOfWork, IMapper mapper, UserManager<LocalUser> userManager)
+        public CelenderController(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            UserManager<LocalUser> userManager)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
@@ -51,8 +51,8 @@ namespace StudentProjectsCenter.Controllers
                     Description = ele.Description,
                     Author = author?.UserName ?? "",
                     AllDay = ele.AllDay,
-                    StartAt = ele.StartAt?.ToString("MM/dd/yyyy hh:mm tt"),
-                    EndAt = ele.EndAt?.ToString("MM/dd/yyyy hh:mm tt"),
+                    StartAt = ele.StartAt,
+                    EndAt = ele.EndAt
                 });
             }
 
@@ -70,21 +70,26 @@ namespace StudentProjectsCenter.Controllers
             }
 
             var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId, "Project.UserProjects");
-            if(workgroup == null)
+            if (workgroup == null)
             {
                 return NotFound(new ApiResponse(404, "Workgropu not found"));
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var existInWorkgroup = workgroup.Project?.UserProjects?.Any(u => u.UserId ==  userId) ?? false;
-            if(!existInWorkgroup)
+            if (userId == null)
             {
-                return BadRequest(new ApiResponse(400, "You are not a member of this workgroup0"));
+                return BadRequest(new ApiResponse(400, "User ID is required"));
+            }
+
+            var existInWorkgroup = workgroup.Project?.UserProjects?.Any(u => u.UserId == userId) ?? false;
+            if (!existInWorkgroup)
+            {
+                return BadRequest(new ApiResponse(400, "You are not a member of this workgroup"));
             }
 
             var CelenderEvent = mapper.Map<Celender>(eventDTO);
 
-            CelenderEvent.AuthorId = userId ?? "";
+            CelenderEvent.AuthorId = userId;
             CelenderEvent.Workgroup = workgroup;
 
             await unitOfWork.celenderRepository.Create(CelenderEvent);
@@ -103,18 +108,22 @@ namespace StudentProjectsCenter.Controllers
 
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
-            int id, 
-            [Required] CreateCelenderEventDTO eventDTO)
+            int id,
+            [Required, FromBody] CreateCelenderEventDTO eventDTO)
         {
-            if(eventDTO.EndAt < eventDTO.StartAt)
+            if (eventDTO.EndAt < eventDTO.StartAt)
             {
                 return BadRequest(new ApiResponse(400, "End date must be later than start date"));
             }
 
             var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            var existingEvent = await unitOfWork.celenderRepository.GetById(id);
+            if (userId == null)
+            {
+                return BadRequest(new ApiResponse(400, "User ID is required"));
+            }
 
-            if(existingEvent == null)
+            var existingEvent = await unitOfWork.celenderRepository.GetById(id);
+            if (existingEvent == null)
             {
                 return NotFound(new ApiResponse(404, "Event not found"));
             }

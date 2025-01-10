@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using StudentProjectsCenter.Core.Entities.DTO.Authentication;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
@@ -52,7 +53,8 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody, Required] RegisterationRequestDTO model)
+        public async Task<IActionResult> Register(
+            [FromBody, Required] RegisterationRequestDTO model)
         {
             var response = await authRepository.Register(model);
 
@@ -74,7 +76,9 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpGet("confirm-email")]
-        public async Task<IActionResult> ConfirmEmail([Required] string userId, [Required] string token)
+        public async Task<IActionResult> ConfirmEmail(
+            [Required] string userId, 
+            [Required] string token)
         {
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
             {
@@ -104,7 +108,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpPost("send-reset-code/{email}")]
-        public async Task<IActionResult> SendPasswordResetLink(string email)
+        public async Task<IActionResult> SendPasswordResetLink([Required] string email)
         {
             var user = await userManager.FindByEmailAsync(email);
             if (user == null)
@@ -131,14 +135,14 @@ namespace StudentProjectsCenterSystem.Controllers
                 return StatusCode(500, $"An error occurred while sending the message: {emailSent.ErrorMessage}");
             }
 
-            return Ok(new ApiResponse(200, "Password reset link has been sent. Please check your email."));
+            return Ok(new ApiResponse(200, "Password reset code has been sent. Please check your email."));
         }
 
 
         [HttpPost("reset-forgotten-password/{email}")]
         public async Task<IActionResult> ResetForgottenPassword(
             string email,
-            [FromBody, Required] ResetPasswordDTO model)
+            [FromBody, Required] ResetForgetPasswordDTO model)
         {
             if (!ModelState.IsValid)
             {

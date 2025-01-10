@@ -1,11 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
-using StudentProjectsCenterSystem.Core.Entities.Domain.project;
+﻿using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 
 namespace StudentProjectsCenterSystem.Core.IRepositories
 {
     public interface IProjectDetailsSectionsRepository : IGenericRepository<ProjectDetailsSection>
     {
-        public Task<int> GetSectionId (string name);
-        public Task<List<ProjectDetailsSection>> GetAllByProjecId(int projectId);
+        public Task<int> GetSectionId(string name);
     }
 }
