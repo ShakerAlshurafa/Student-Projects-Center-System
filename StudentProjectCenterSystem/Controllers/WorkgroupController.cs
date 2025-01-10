@@ -86,8 +86,6 @@ namespace StudentProjectsCenterSystem.Controllers
             int PageSize = 6,
             int PageNumber = 1)
         {
-
-
             // Retrieve the logged-in user's ID from the claims
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -95,11 +93,9 @@ namespace StudentProjectsCenterSystem.Controllers
                 return Unauthorized(new ApiResponse(401, "User not Find."));
             }
 
-
             // Filter workgroups where the logged-in user is associated
             Expression<Func<Workgroup, bool>> filter = x => x.Project != null &&
-                x.Project.UserProjects.Any(up => up.UserId == userId);
-
+                x.Project.UserProjects.Any(up => up.UserId == userId && !up.IsDeleted);
 
             var workgroups = await unitOfWork.workgroupRepository.GetAll(filter, PageSize, PageNumber, "Project.UserProjects.User");
             if (!workgroups.Any())

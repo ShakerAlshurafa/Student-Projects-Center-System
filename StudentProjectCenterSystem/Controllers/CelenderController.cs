@@ -3,14 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenter.Core.Entities.Domain.workgroup;
-using StudentProjectsCenter.Core.Entities.DTO;
 using StudentProjectsCenter.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Security.Claims;
-using System.Text.Json;
 
 namespace StudentProjectsCenter.Controllers
 {
@@ -24,8 +22,8 @@ namespace StudentProjectsCenter.Controllers
         private readonly UserManager<LocalUser> userManager;
 
         public CelenderController(
-            IUnitOfWork unitOfWork, 
-            IMapper mapper, 
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
             UserManager<LocalUser> userManager)
         {
             this.unitOfWork = unitOfWork;
@@ -111,7 +109,7 @@ namespace StudentProjectsCenter.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
             int id,
-            [Required] CreateCelenderEventDTO eventDTO)
+            [Required, FromBody] CreateCelenderEventDTO eventDTO)
         {
             if (eventDTO.EndAt < eventDTO.StartAt)
             {
@@ -125,7 +123,6 @@ namespace StudentProjectsCenter.Controllers
             }
 
             var existingEvent = await unitOfWork.celenderRepository.GetById(id);
-
             if (existingEvent == null)
             {
                 return NotFound(new ApiResponse(404, "Event not found"));

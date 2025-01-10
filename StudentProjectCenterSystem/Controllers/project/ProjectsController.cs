@@ -45,7 +45,7 @@ namespace StudentProjectsCenter.Controllers.project
                 active = "The project is currently ongoing, with tasks and activities actively being worked on.",
                 completed = "The project has been successfully finished, with all objectives and deliverables met.",
                 pending = "The project is in a state of preparation, awaiting the necessary decisions or requirements to begin or reach completion.",
-                canceled = "The project has been terminated before completion due to specific circumstances or changes in requirements."
+                archive = "The project has been terminated before completion due to specific circumstances or changes in requirements."
             }));
         }
 
@@ -77,7 +77,7 @@ namespace StudentProjectsCenter.Controllers.project
             }
 
             // Validate the new status
-            var validStatuses = new List<string> { "active", "completed", "pending", "canceled" };
+            var validStatuses = new List<string> { "active", "completed", "pending", "archive" };
             if (string.IsNullOrWhiteSpace(changeProjectStatusDTO.status) || !validStatuses.Contains(changeProjectStatusDTO.status.ToLower()))
             {
                 return BadRequest(new ApiResponse(400, $"Invalid status. Allowed values: {string.Join(", ", validStatuses)}"));

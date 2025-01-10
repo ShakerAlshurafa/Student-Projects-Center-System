@@ -94,12 +94,10 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
             details.Description = section.Description;
             details.IconData = section.IconData;
 
-            var model = mapper.Map<ProjectDetailEntity>(details);
+            unitOfWork.projectDetailsRepository.Update(details);
 
             // Save the changes
-            unitOfWork.projectDetailsRepository.Update(model);
             int successSave = await unitOfWork.save();
-
             if (successSave == 0)
             {
                 return StatusCode(500, new ApiResponse(500, "Update Failed"));
