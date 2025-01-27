@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenter.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
@@ -34,7 +35,7 @@ namespace StudentProjectsCenter.Controllers.project
         [HttpGet("get-all-for-user/{PageSize}/{PageNumber}")]
         //[ResponseCache(CacheProfileName = ("defaultCache"))]
         public async Task<ActionResult<ApiResponse>> GetAllForUser(
-            int PageSize = 6, 
+            int PageSize = 6,
             int PageNumber = 1)
         {
             // Retrieve the logged-in user's ID from the claims
@@ -47,7 +48,7 @@ namespace StudentProjectsCenter.Controllers.project
 
             // Filter workgroups where the logged-in user is associated
             Expression<Func<StudentProjectsCenterSystem.Core.Entities.project.Project, bool>> filter = x =>
-                x.UserProjects.Any(up => up.UserId == userId);
+                x.UserProjects.Any(up => up.UserId == userId && !up.IsDeleted);
 
             var projects = await unitOfWork.projectRepository.GetAll(filter, PageSize, PageNumber, "Workgroup,UserProjects.User");
             if (!projects.Any())
@@ -70,40 +71,54 @@ namespace StudentProjectsCenter.Controllers.project
         [Authorize(Roles = "supervisor,admin")]
         [HttpPost("students")]
         public async Task<ActionResult<ApiResponse>> AddStudent(
-            [Required] int projectId, 
-            [Required] CreateStudentDTO students)
+            int projectId,
+            CreateStudentDTO students)
         {
+            if (projectId <= 0)
+            {
+                return BadRequest(new ApiResponse(400, "Invalid Project ID."));
+            }
+
+            if (students == null || students.usersIds == null || !students.usersIds.Any())
+            {
+                return BadRequest(new ApiResponse(400, "Invalid student data or empty user IDs."));
+            }
+
             var existingProject = await unitOfWork.projectRepository.GetById(projectId, "UserProjects");
             if (existingProject == null)
             {
                 return NotFound(new ApiResponse(404, "Project not found."));
             }
 
-            // Validate that all students exist in the system
-            foreach (var userId in students.usersId)
+            var existingUsers = await userManager.Users
+                .Where(u => students.usersIds.Contains(u.Id))
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            var invalidUserIds = students.usersIds.Except(existingUsers).ToList();
+            if (invalidUserIds.Any())
             {
-                var user = await userManager.FindByIdAsync(userId);
-                if (user == null)
-                {
-                    return BadRequest(new ApiValidationResponse(new List<string> { $"User with ID {userId} not found." }));
-                }
+                return BadRequest(new ApiValidationResponse(
+                    invalidUserIds.Select(id => $"User with ID {id} not found.").ToList()
+                ));
             }
 
-            foreach (var userId in students.usersId)
+            foreach (var userId in students.usersIds)
             {
                 var existingUserProject = existingProject.UserProjects
-                .FirstOrDefault(u => u.UserId == userId);
-
+                    .FirstOrDefault(u => u.UserId == userId);
 
                 if (existingUserProject != null)
                 {
                     if (existingUserProject.IsDeleted)
                     {
-                        // Change IsDeleted to false
+                        existingProject.UserProjects.Remove(existingUserProject);
+
                         existingUserProject.JoinAt = DateTime.UtcNow;
                         existingUserProject.IsDeleted = false;
                         existingUserProject.Role = "student";
-                        existingUserProject.DeletedNotes = null;
+
+                        existingProject.UserProjects.Add(new UserProject { UserId = userId, Role = "student" });
                     }
                     else if (existingUserProject.Role == "student")
                     {
@@ -116,16 +131,12 @@ namespace StudentProjectsCenter.Controllers.project
                 }
                 else
                 {
-                    existingProject.UserProjects.Add(new UserProject { UserId = userId, Role = "Student" });
+                    existingProject.UserProjects.Add(new UserProject { UserId = userId, Role = "student" });
                 }
             }
 
             existingProject.Status = "active";
 
-            // Save the changes
-            unitOfWork.projectRepository.Update(existingProject);
-
-            // Save changes to the database
             int successSave = await unitOfWork.save();
             if (successSave == 0)
             {
@@ -136,11 +147,12 @@ namespace StudentProjectsCenter.Controllers.project
         }
 
 
+
         [Authorize(Roles = "supervisor,admin")]
-        [HttpDelete("{projectId}/students")]
+        [HttpDelete("{projectId}/students/{studentId}")]
         public async Task<ActionResult<ApiResponse>> DeleteStudent(
             int projectId,
-            [FromQuery, Required] string studentId,
+            string studentId,
             [FromBody] NotesDTO notes)
         {
             if (string.IsNullOrEmpty(studentId))
@@ -164,12 +176,15 @@ namespace StudentProjectsCenter.Controllers.project
                 return NotFound(new ApiResponse(404, "Student not found in this project."));
             }
 
+            // Remove the student entry from the UserProjects collection
+            existingProject.UserProjects.Remove(studentEntry);
+
             studentEntry.IsDeleted = true;
             studentEntry.DeletedNotes = notes.Notes;
             studentEntry.DeletededAt = DateTime.UtcNow;
 
-            //// Remove the student entry from the UserProjects collection
-            //existingProject.UserProjects.Remove(studentEntry);
+            // ADd the student entry after update to the UserProjects collection
+            existingProject.UserProjects.Add(studentEntry);
 
             // Save the changes
             unitOfWork.projectRepository.Update(existingProject);
@@ -188,7 +203,7 @@ namespace StudentProjectsCenter.Controllers.project
         [HttpPost("co-supervisor")]
         public async Task<ActionResult<ApiResponse>> AddCoSupervisor(
             [Required] int projectId,
-            [Required] CreateCoSupervisorDTO supervisor)
+            [Required] CreateCoSupervisorDTO coSupervisor)
         {
 
             var existingProject = await unitOfWork.projectRepository.GetById(projectId, "UserProjects");
@@ -198,16 +213,19 @@ namespace StudentProjectsCenter.Controllers.project
             }
 
             var existingUserProject = existingProject.UserProjects
-                .FirstOrDefault(u => u.UserId == supervisor.userId);
+                .FirstOrDefault(u => u.UserId == coSupervisor.userId && u.ProjectId == projectId);
 
             if (existingUserProject != null)
             {
                 if (existingUserProject.IsDeleted)
                 {
-                    // Change IsDeleted to false
+                    existingProject.UserProjects.Remove(existingUserProject);
+                    
                     existingUserProject.IsDeleted = false;
                     existingUserProject.Role = "co-supervisor";
                     existingUserProject.DeletedNotes = null;
+
+                    existingProject.UserProjects.Add(new UserProject { UserId = coSupervisor.userId, Role = "co-supervisor" });
                 }
                 else if (existingUserProject.Role == "co-supervisor")
                 {
@@ -220,13 +238,13 @@ namespace StudentProjectsCenter.Controllers.project
             }
             else
             {
-                var user = await userManager.FindByIdAsync(supervisor.userId);
+                var user = await userManager.FindByIdAsync(coSupervisor.userId);
                 if (user == null)
                 {
-                    return BadRequest(new ApiValidationResponse(new List<string> { $"User with ID {supervisor.userId} not found." }));
+                    return BadRequest(new ApiValidationResponse(new List<string> { $"User with ID {coSupervisor.userId} not found." }));
                 }
 
-                existingProject.UserProjects.Add(new UserProject { UserId = supervisor.userId, Role = "co-supervisor" });
+                existingProject.UserProjects.Add(new UserProject { UserId = coSupervisor.userId, Role = "co-supervisor" });
             }
 
 
@@ -247,7 +265,7 @@ namespace StudentProjectsCenter.Controllers.project
         [HttpDelete("{projectId}/co-supervisor")]
         public async Task<ActionResult<ApiResponse>> DeleteCoSupervisor(
             int projectId,
-            [FromQuery, Required] string co_supervisorId,
+            [FromQuery] string co_supervisorId,
             [FromBody] NotesDTO notes)
         {
 
@@ -267,12 +285,15 @@ namespace StudentProjectsCenter.Controllers.project
                 return NotFound(new ApiResponse(404, "Co-Supervisor not found in this project."));
             }
 
+            // Remove the co_supervisorEntry entry from the UserProjects collection
+            existingProject.UserProjects.Remove(co_supervisorEntry);
+
             co_supervisorEntry.IsDeleted = true;
             co_supervisorEntry.DeletedNotes = notes.Notes;
             co_supervisorEntry.DeletededAt = DateTime.UtcNow;
 
-            //// Remove the student entry from the UserProjects collection
-            //existingProject.UserProjects.Remove(supervisorEntry);
+            // Add the co_supervisorEntry after update to delete
+            existingProject.UserProjects.Add(co_supervisorEntry);
 
             // Save the changes
             unitOfWork.projectRepository.Update(existingProject);

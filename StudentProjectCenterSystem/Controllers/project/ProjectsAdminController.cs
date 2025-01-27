@@ -121,7 +121,8 @@ namespace StudentProjectsCenter.Controllers.project
 
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> Create([FromBody, Required] ProjectCreateDTO project)
+        public async Task<ActionResult<ApiResponse>> Create(
+            [FromBody] ProjectCreateDTO project)
         {
             if (!ModelState.IsValid)
             {
@@ -244,7 +245,7 @@ namespace StudentProjectsCenter.Controllers.project
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
             int id, 
-            [FromBody, Required] UpdateProjectDTO updateProjectDTO)
+            [FromBody] UpdateProjectDTO updateProjectDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -255,101 +256,97 @@ namespace StudentProjectsCenter.Controllers.project
             }
 
             // Find the project by id
-            var existingProject = await unitOfWork.projectRepository.GetById(id);
+            var existingProject = await unitOfWork.projectRepository.GetById(id, "UserProjects");
             if (existingProject == null)
             {
                 return NotFound(new ApiResponse(404, "Project not found."));
             }
 
-            if (!updateProjectDTO.Name.IsNullOrEmpty())
+            existingProject.Name = updateProjectDTO.Name;
+            if (existingProject.Workgroup != null)
+                existingProject.Workgroup.Name = updateProjectDTO.Name + " " + "Workgroup";
+
+            var newSupervisor = await userManager.FindByIdAsync(updateProjectDTO.SupervisorId);
+            if (newSupervisor == null)
             {
-                existingProject.Name = updateProjectDTO.Name;
-                if (existingProject.Workgroup != null)
-                    existingProject.Workgroup.Name = updateProjectDTO.Name + " " + "Workgroup";
+                return BadRequest(new ApiValidationResponse(new List<string> { $"Supervisor with ID {updateProjectDTO.SupervisorId} not found." }));
             }
 
-            if (!updateProjectDTO.SupervisorId.IsNullOrEmpty())
+            // Get roles of the user
+            var roles = await userManager.GetRolesAsync(newSupervisor);
+
+            // Check if the user has the "supervisor" role
+            if (!roles.Contains("supervisor"))
             {
-                var newSupervisor = await userManager.FindByIdAsync(updateProjectDTO.SupervisorId);
-                if (newSupervisor == null)
-                {
-                    return BadRequest(new ApiValidationResponse(new List<string> { $"Supervisor with ID {updateProjectDTO.SupervisorId} not found." }));
-                }
+                return BadRequest(new ApiResponse(400, "The user is not a supervisor."));
+            }
 
-                // Get roles of the user
-                var roles = await userManager.GetRolesAsync(newSupervisor);
+            var oldSupervisorEntry = existingProject.UserProjects
+                            .FirstOrDefault(up => up.Role.ToLower() == "supervisor" && !up.IsDeleted);
 
-                // Check if the user has the "supervisor" role
-                if (!roles.Contains("supervisor"))
-                {
-                    return BadRequest(new ApiResponse(400, "The user is not a supervisor."));
-                }
+            if (oldSupervisorEntry != null && oldSupervisorEntry.UserId != updateProjectDTO.SupervisorId)
+            {
+                    existingProject.UserProjects.Remove(oldSupervisorEntry);
 
-                var supervisorEntry = existingProject.UserProjects
-                                .FirstOrDefault(up => up.Role.ToLower() == "supervisor");
+                    oldSupervisorEntry.IsDeleted = true;
+                    oldSupervisorEntry.DeletedNotes = updateProjectDTO.ChangeOldSupervisorNotes;
+                    oldSupervisorEntry.DeletededAt = DateTime.UtcNow;
 
-                if (supervisorEntry == null)
-                {
-                    return NotFound(new ApiResponse(404, "Old supervisor not found."));
-                }
-
-                supervisorEntry.IsDeleted = true;
-                supervisorEntry.DeletedNotes = updateProjectDTO.ChangeOldSupervisorNotes;
-                supervisorEntry.DeletededAt = DateTime.UtcNow;
-
+                    existingProject.UserProjects.Add(oldSupervisorEntry);
+                    existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.SupervisorId, Role = "supervisor" });
+            }
+            else if(oldSupervisorEntry == null)
+            {
                 existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.SupervisorId, Role = "supervisor" });
             }
 
-            if (!updateProjectDTO.CustomerId.IsNullOrEmpty())
+
+
+            var newCustomer = await userManager.FindByIdAsync(updateProjectDTO.CustomerId);
+            if (newCustomer == null)
             {
-                var newCustomer = await userManager.FindByIdAsync(updateProjectDTO.CustomerId);
-                if (newCustomer == null)
-                {
-                    return BadRequest(new ApiValidationResponse(new List<string> { $"Customer with ID {updateProjectDTO.CustomerId} not found." }));
-                }
+                return BadRequest(new ApiValidationResponse(new List<string> { $"Customer with ID {updateProjectDTO.CustomerId} not found." }));
+            }
 
-                // Get roles of the user
-                var roles = await userManager.GetRolesAsync(newCustomer);
+            var oldCustomerEntry = existingProject.UserProjects
+                            .FirstOrDefault(up => up.Role.ToLower() == "customer" && !up.IsDeleted);
 
-                var customerrEntry = existingProject.UserProjects
-                                .FirstOrDefault(up => up.Role == "customer");
+            if (oldCustomerEntry != null && oldCustomerEntry.UserId != updateProjectDTO.CustomerId)
+            {
+                    existingProject.UserProjects.Remove(oldCustomerEntry);
 
-                if (customerrEntry == null)
-                {
-                    return NotFound(new ApiResponse(404, "Old customer not found."));
-                }
+                    oldCustomerEntry.IsDeleted = true;
+                    oldCustomerEntry.DeletedNotes = updateProjectDTO.ChangeOldCustomerNotes;
+                    oldCustomerEntry.DeletededAt = DateTime.UtcNow;
 
-                customerrEntry.IsDeleted = true;
-                customerrEntry.DeletedNotes = updateProjectDTO.ChangeOldCustomerNotes;
-                customerrEntry.DeletededAt = DateTime.UtcNow;
-
+                    existingProject.UserProjects.Add(oldCustomerEntry);             
+                    existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.CustomerId, Role = "customer" });
+            }
+            else if (oldSupervisorEntry == null)
+            {
                 existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.CustomerId, Role = "customer" });
             }
 
-            if(updateProjectDTO.Status != null)
+            // Validate the new status
+            var validStatuses = new List<string> { "active", "completed", "pending", "canceled" };
+            if (string.IsNullOrWhiteSpace(updateProjectDTO.Status) || !validStatuses.Contains(updateProjectDTO.Status.ToLower()))
             {
-                // Validate the new status
-                var validStatuses = new List<string> { "active", "completed", "pending", "canceled" };
-                if (string.IsNullOrWhiteSpace(updateProjectDTO.Status) || !validStatuses.Contains(updateProjectDTO.Status.ToLower()))
-                {
-                    return BadRequest(new ApiResponse(400, $"Invalid status. Allowed values: {string.Join(", ", validStatuses)}"));
-                }
+                return BadRequest(new ApiResponse(400, $"Invalid status. Allowed values: {string.Join(", ", validStatuses)}"));
+            }
 
-                // Update the project status
-                existingProject.Status = updateProjectDTO.Status;
-                existingProject.ChangeStatusNotes = updateProjectDTO.ChangeStatusNotes;
-                existingProject.ChangeStatusAt = DateTime.UtcNow;
+            // Update the project status
+            existingProject.Status = updateProjectDTO.Status.ToLower();
+            existingProject.ChangeStatusNotes = updateProjectDTO.ChangeStatusNotes;
+            existingProject.ChangeStatusAt = DateTime.UtcNow;
 
-                if (existingProject.Status == "completed")
-                {
-                    existingProject.EndDate = DateTime.UtcNow;
-                }
+            if (existingProject.Status == "completed")
+            {
+                existingProject.EndDate = DateTime.UtcNow;
             }
 
             // Save the changes
             unitOfWork.projectRepository.Update(existingProject);
             int successSave = await unitOfWork.save();
-
             if (successSave == 0)
             {
                 return StatusCode(500, new ApiResponse(500, "Update Failed"));

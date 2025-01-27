@@ -7,9 +7,7 @@ using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
-using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Security.Claims;
 
@@ -35,7 +33,8 @@ namespace StudentProjectsCenterSystem.Controllers
             int PageSize = 6,
             int PageNumber = 1)
         {
-            Expression<Func<Workgroup, bool>> filter = x => true;
+            Expression<Func<Workgroup, bool>> filter = x => 
+                x.Project != null && x.Project.UserProjects.Any(u => !u.IsDeleted);
             if (!string.IsNullOrEmpty(workgroupName))
             {
                 filter = x => x.Name.Contains(workgroupName);
@@ -133,17 +132,17 @@ namespace StudentProjectsCenterSystem.Controllers
 
             int workgroups_count = await unitOfWork.workgroupRepository.Count(filter);
 
-            return new ApiResponse(200, "Workgroups retrieved successfully for the user.", new
+            return Ok(new ApiResponse(200, "Workgroups retrieved successfully for the user.", new
             {
                 Total = workgroups_count,
                 Workgroups = workgroupDTOs
-            });
+            }));
         }
 
 
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResponse>> GetById([Required] int id)
+        public async Task<ActionResult<ApiResponse>> GetById(int id)
         {
             // Retrieve the workgroup with related data for Project, UserProjects, and associated users.
             var workgroup = await unitOfWork.workgroupRepository.GetById(id, includeProperty: "Project.UserProjects.User");
@@ -158,20 +157,26 @@ namespace StudentProjectsCenterSystem.Controllers
             if (userId != null)
             {
                 role = workgroup.Project?.UserProjects
-                        .Where(u => u.UserId == userId)
+                        .Where(u => u.UserId == userId && !u.IsDeleted)
                         .Select(u => u.Role)
                         .FirstOrDefault();
             }
 
-            var userProjects = workgroup.Project?.UserProjects ?? new List<UserProject>();
+            if (string.IsNullOrEmpty(role))
+            {
+                return Ok(new ApiResponse(200, "You are not in any workgroup"));
+            }
 
-            var supervisor = userProjects.FirstOrDefault(u => u.Role == "supervisor")?.User;
-            var co_supervisor = userProjects.FirstOrDefault(u => u.Role == "co-supervisor")?.User;
-            var customer = userProjects.FirstOrDefault(u => u.Role == "customer")?.User;
-            var students = userProjects
+            var userProjects = workgroup.Project?.UserProjects.Where(u => !u.IsDeleted).ToList();
+            
+            var supervisor = userProjects?.FirstOrDefault(u => u.Role == "supervisor")?.User;
+            var co_supervisor = userProjects?.FirstOrDefault(u => u.Role == "co-supervisor")?.User;
+            var customer = userProjects?.FirstOrDefault(u => u.Role == "customer")?.User;
+            var students = userProjects?
                         .Where(u => u.Role == "student")
                         .Select(u => new WorkgroupUsersDTO()
                         {
+                            userId = u.UserId,
                             FullName = string.Join(" ", [u?.User.FirstName, u?.User.MiddleName, u?.User.LastName]),
                             Email = u?.User.Email ?? "",
                             Role = u?.Role ?? ""
@@ -180,13 +185,16 @@ namespace StudentProjectsCenterSystem.Controllers
 
             var members = new List<WorkgroupUsersDTO>()
             {
-                new WorkgroupUsersDTO{
+                new WorkgroupUsersDTO
+                {
+                    userId = supervisor?.Id ?? "",
                     FullName = string.Join(" ", [supervisor?.FirstName, supervisor?.MiddleName, supervisor?.LastName]),
                     Email = supervisor?.Email ?? "",
                     Role = "supervisor"
                 },
                 new WorkgroupUsersDTO
                 {
+                    userId = customer?.Id ?? "",
                     FullName = string.Join(" ", [customer?.FirstName, customer?.MiddleName, customer?.LastName]),
                     Email = customer?.Email ?? "",
                     Role = "customer"
@@ -200,6 +208,7 @@ namespace StudentProjectsCenterSystem.Controllers
             {
                 members.Add(new WorkgroupUsersDTO
                 {
+                    userId = co_supervisor?.Id ?? "",
                     FullName = string.Join(" ", [co_supervisor?.FirstName, co_supervisor?.MiddleName, co_supervisor?.LastName]),
                     Email = co_supervisor?.Email ?? "",
                     Role = "co_supervisor"

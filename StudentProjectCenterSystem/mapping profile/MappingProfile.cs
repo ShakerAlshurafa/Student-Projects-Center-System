@@ -52,6 +52,7 @@ namespace StudentProjectsCenterSystem.mapping_profile
             CreateMap<Celender, CreateCelenderEventDTO>().ReverseMap();
             CreateMap<Celender, CelenderEventDTO>().ReverseMap();
 
+            CreateMap<OurCustomerDTO, LocalUser>().ReverseMap();
         }
 
     }

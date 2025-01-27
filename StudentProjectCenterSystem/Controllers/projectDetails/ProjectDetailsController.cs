@@ -28,7 +28,7 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
         [HttpPost("{sectionId}")]
         public async Task<ActionResult<ApiResponse>> Create(
             int sectionId, 
-            [FromBody, Required] ProjectDetailsCreateDTO[] projectDetailsDto)
+            [FromBody] ProjectDetailsCreateDTO[] projectDetailsDto)
         {
             // Validate the model state
             if (!ModelState.IsValid)
@@ -73,7 +73,9 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
 
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse>> Update(int id, [FromBody] ProjectDetailsEditDTO section)
+        public async Task<ActionResult<ApiResponse>> Update(
+            int id, 
+            [FromBody] ProjectDetailsEditDTO section)
         {
             if (!ModelState.IsValid)
             {

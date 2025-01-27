@@ -53,7 +53,7 @@ namespace StudentProjectsCenter.Controllers.project
         public async Task<ActionResult<ApiResponse>> GetFavoriteProjects()
         {
             Expression<Func<Project, bool>> filter = x => x.Favorite;
-            var favoriteProjects = await unitOfWork.projectRepository.GetAll(filter);
+            var favoriteProjects = await unitOfWork.projectRepository.GetAll(filter, "ProjectDetailsSection.ProjectDetails");
 
             if(favoriteProjects == null)
             {

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails
+﻿namespace StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails
 {
     public class ProjectDetailsEditDTO
     {

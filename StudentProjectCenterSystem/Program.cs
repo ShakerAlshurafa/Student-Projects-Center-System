@@ -4,12 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using StudentProjectsCenter.Core.Entities.DTO;
 using StudentProjectsCenter.Core.IRepositories;
 using StudentProjectsCenter.Infrastructure.Repositories;
 using StudentProjectsCenter.Services;
 using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using StudentProjectsCenterSystem.Infrastructure.Data;
@@ -27,8 +25,10 @@ namespace StudentProjectCenterSystem
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddSignalR();
+
             // Register services
-            builder.Services.AddScoped<IStatusUpdater<WorkgroupTask>, StatusUpdater<WorkgroupTask>>(); // Register IStatusUpdater
+            builder.Services.AddScoped(typeof(IStatusUpdater<>), typeof(StatusUpdater<>)); // Register IStatusUpdater
             builder.Services.AddScoped<StatusUpdateService>(); // Register StatusUpdateService
 
             // Register the background service to run automatically
@@ -71,8 +71,6 @@ namespace StudentProjectCenterSystem
             builder.Services.AddScoped<AzureFileUploader>();
 
             builder.Services.AddTransient<IEmailService, EmailService>();
-
-            builder.Services.AddSignalR();
 
             // Tokens used for password reset, email confirmation, or account activation.
             builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
@@ -174,11 +172,12 @@ namespace StudentProjectCenterSystem
             // Serve files from wwwroot
             app.UseStaticFiles();
 
-            // Use SignalR
-            app.MapHub<ChatHub>("/chathub");
-
             // Use the CORS policy globally
             app.UseCors("AllowAll");
+            app.UseRouting();
+
+            // Use SignalR
+            app.MapHub<ChatHub>("/chathub");
 
             // Configure the HTTP request pipeline.
             // if (app.Environment.IsDevelopment())
