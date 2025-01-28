@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenter.Core.Entities.DTO.Project;
+using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
 using StudentProjectsCenterSystem.Core.Entities.project;
@@ -32,7 +33,13 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             var supervisor = project?.UserProjects?
                     .FirstOrDefault(up => up.Role == "supervisor" && !up.IsDeleted);
             var co_supervisor = project?.UserProjects?
-                .FirstOrDefault(up => up.Role == "co-supervisor" && !up.IsDeleted);
+                .Where(up => up.Role == "co-supervisor" && !up.IsDeleted)
+                .Select(u => new CoSupervisorDTO() 
+                { 
+                    CoSupervisorId = u.UserId,
+                    CoSupervisorName = string.Join(" ", [u?.User?.FirstName, u?.User?.MiddleName, u?.User?.LastName]),
+                    CoSupervisorJoinAt = u?.JoinAt
+                }).ToList();
             var customer = project?.UserProjects?
                 .FirstOrDefault(up => up.Role == "customer" && !up.IsDeleted);
 
@@ -54,10 +61,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 SupervisorId = supervisor?.UserId ?? "",
                 SupervisorName = supervisor?.User?.FirstName + " " + supervisor?.User?.LastName
                                     ?? "No Supervisor Assigned",
-                CoSupervisorJoinAt = co_supervisor?.JoinAt,
-                CoSupervisorId = co_supervisor?.UserId ?? "",
-                CoSupervisorName = co_supervisor?.User?.FirstName + " " + co_supervisor?.User?.LastName
-                                    ?? "No Co-Supervisor Assigned",
+                coSupervisors = co_supervisor,
                 CustomerId = customer?.UserId ?? "",
                 CustomerName = customer?.User?.FirstName + " " + customer?.User?.LastName
                                     ?? "No Customer Assigned",

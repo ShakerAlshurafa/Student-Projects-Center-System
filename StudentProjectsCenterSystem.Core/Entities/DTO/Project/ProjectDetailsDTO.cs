@@ -1,4 +1,5 @@
 ﻿using StudentProjectsCenter.Core.Entities.DTO.Project;
+using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
 using StudentProjectsCenterSystem.Core.Entities.project;
 
@@ -12,9 +13,7 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Project
         public DateTime? SupervisorJoinAt { get; set; }
         public string SupervisorId { get; set; } = string.Empty;
         public string SupervisorName { get; set; } = string.Empty;
-        public DateTime? CoSupervisorJoinAt { get; set; }
-        public string CoSupervisorId { get; set; } = string.Empty;
-        public string? CoSupervisorName { get; set; } = string.Empty;
+        public List<CoSupervisorDTO>? coSupervisors { get; set; }
 
         public string CustomerId { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;

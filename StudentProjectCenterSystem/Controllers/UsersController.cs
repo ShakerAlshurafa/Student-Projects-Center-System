@@ -197,6 +197,7 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
+        [Authorize(Roles = "admin")]
         [HttpGet("customers/{PageSize}/{PageNumber}")]
         public async Task<ActionResult<ApiResponse>> GetCustomers(
             int PageSize = 6,
@@ -280,7 +281,8 @@ namespace StudentProjectsCenterSystem.Controllers
             var projectsActiveCount = await unitOfWork.projectRepository.Count(x => x.Status == "active");
             var projectsCompletedCount = await unitOfWork.projectRepository.Count(x => x.Status == "completed");
             var projectsPendingCount = await unitOfWork.projectRepository.Count(x => x.Status == "pending");
-
+            var projectsCanceledCount = await unitOfWork.projectRepository.Count(x => x.Status == "canceled");
+            var projectTotalCount = projectsActiveCount + projectsCompletedCount + projectsPendingCount + projectsCanceledCount;
 
             return Ok(new ApiResponse(200, result: new
             {
@@ -293,9 +295,12 @@ namespace StudentProjectsCenterSystem.Controllers
                 customersCount,
                 StudentsCount,
 
+                projectTotalCount,
                 projectsActiveCount,
                 projectsCompletedCount,
-                projectsPendingCount
+                projectsPendingCount,
+                projectsCanceledCount
+
             }));
         }
 

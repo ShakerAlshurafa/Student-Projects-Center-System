@@ -33,7 +33,7 @@ namespace StudentProjectsCenterSystem.Controllers
             int PageSize = 6,
             int PageNumber = 1)
         {
-            Expression<Func<Workgroup, bool>> filter = x => 
+            Expression<Func<Workgroup, bool>> filter = x =>
                 x.Project != null && x.Project.UserProjects.Any(u => !u.IsDeleted);
             if (!string.IsNullOrEmpty(workgroupName))
             {
@@ -58,7 +58,9 @@ namespace StudentProjectsCenterSystem.Controllers
                     SupervisorName = userProjects
                                         .FirstOrDefault(u => u.Role == "supervisor")?.User.UserName ?? string.Empty,
                     CoSupervisorName = userProjects
-                                        .FirstOrDefault(u => u.Role == "co-supervisor")?.User.UserName ?? string.Empty,
+                                        .Where(u => u.Role == "co-supervisor")
+                                        .Select(u => u.User.UserName)
+                                        .ToList(),
                     CustomerName = customer?.User.UserName ?? string.Empty,
                     Company = customer?.User.CompanyName ?? string.Empty,
                     Team = userProjects
@@ -120,7 +122,10 @@ namespace StudentProjectsCenterSystem.Controllers
                     Name = w.Name,
                     Role = role ?? "",
                     SupervisorName = userProjects.FirstOrDefault(u => u.Role == "supervisor")?.User.UserName ?? string.Empty,
-                    CoSupervisorName = userProjects.FirstOrDefault(u => u.Role == "co-supervisor")?.User.UserName ?? string.Empty,
+                    CoSupervisorName = userProjects
+                                        .Where(u => u.Role == "co-supervisor")
+                                        .Select(u => u.User.UserName)
+                                        .ToList(),
                     CustomerName = customer?.User.UserName ?? string.Empty,
                     Company = customer?.User.CompanyName ?? string.Empty,
                     Team = userProjects
@@ -168,9 +173,18 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
             var userProjects = workgroup.Project?.UserProjects.Where(u => !u.IsDeleted).ToList();
-            
+
             var supervisor = userProjects?.FirstOrDefault(u => u.Role == "supervisor")?.User;
-            var co_supervisor = userProjects?.FirstOrDefault(u => u.Role == "co-supervisor")?.User;
+            var co_supervisor = userProjects?
+                                    .Where(u => u.Role == "co-supervisor")
+                                    .Select(u => new WorkgroupUsersDTO
+                                    {
+                                        userId = u?.UserId ?? "",
+                                        FullName = string.Join(" ", [u?.User?.FirstName, u?.User?.MiddleName, u?.User?.LastName]),
+                                        Email = u?.User?.Email ?? "",
+                                        Role = "co_supervisor"
+                                    })
+                                    .ToList();
             var customer = userProjects?.FirstOrDefault(u => u.Role == "customer")?.User;
             var students = userProjects?
                         .Where(u => u.Role == "student")
@@ -206,13 +220,7 @@ namespace StudentProjectsCenterSystem.Controllers
             }
             if (co_supervisor != null)
             {
-                members.Add(new WorkgroupUsersDTO
-                {
-                    userId = co_supervisor?.Id ?? "",
-                    FullName = string.Join(" ", [co_supervisor?.FirstName, co_supervisor?.MiddleName, co_supervisor?.LastName]),
-                    Email = co_supervisor?.Email ?? "",
-                    Role = "co_supervisor"
-                });
+                members.AddRange(co_supervisor);
             }
             var workgroupDto = new WorkgroupDTO
             {

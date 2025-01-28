@@ -1,13 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
-using StudentProjectsCenterSystem.Core.Entities.Domain.project;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.MyProject;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
-using System.ComponentModel.DataAnnotations;
 
 namespace StudentProjectsCenter.Controllers.ProjectDetails
 {
@@ -27,7 +25,7 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
 
         [HttpPost("{sectionId}")]
         public async Task<ActionResult<ApiResponse>> Create(
-            int sectionId, 
+            int sectionId,
             [FromBody] ProjectDetailsCreateDTO[] projectDetailsDto)
         {
             // Validate the model state
@@ -38,18 +36,18 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
                                               .ToList();
                 return BadRequest(new ApiValidationResponse(errors));
             }
-            
+
             if (projectDetailsDto == null || !projectDetailsDto.Any())
             {
                 return BadRequest(new ApiResponse(400, "No details provided"));
             }
 
             var section = await unitOfWork.detailsSectionsRepository.GetById(sectionId);
-            if(section == null)
+            if (section == null)
             {
                 return NotFound(new ApiResponse(404, "Section not found"));
             }
-            
+
             var models = projectDetailsDto.Select(detail => new ProjectDetailEntity
             {
                 Title = detail.Title,
@@ -74,7 +72,7 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
 
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
-            int id, 
+            int id,
             [FromBody] ProjectDetailsEditDTO section)
         {
             if (!ModelState.IsValid)
