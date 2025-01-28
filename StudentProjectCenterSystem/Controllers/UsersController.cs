@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using StudentProjectsCenter.Core.Entities.DTO.Project;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.project;
@@ -24,9 +23,9 @@ namespace StudentProjectsCenterSystem.Controllers
         private readonly RoleManager<IdentityRole> roleManager;
 
         public UsersController(
-            IUnitOfWork unitOfWork, 
-            IMapper mapper, 
-            UserManager<LocalUser> userManager, 
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            UserManager<LocalUser> userManager,
             RoleManager<IdentityRole> roleManager)
         {
             this.unitOfWork = unitOfWork;
@@ -37,7 +36,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         // Get all users
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin, supervisor")]
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll()
         {
@@ -58,7 +57,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 });
             }
 
-            return new ApiResponse(200, "Users retrieved successfully", userDTOs);
+            return Ok(new ApiResponse(200, "Users retrieved successfully", userDTOs));
         }
 
         // Get limit number of users
@@ -159,7 +158,7 @@ namespace StudentProjectsCenterSystem.Controllers
             int PageNumber = 1)
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
-                x.UserProjects.All(u => u.Role.ToLower() == "student");
+                x.UserProjects.Any(u => u.Role.ToLower() == "student");
 
             var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber, "UserProjects.Project");
 
@@ -234,6 +233,20 @@ namespace StudentProjectsCenterSystem.Controllers
                 Total = users_count,
                 Customers = userDTOs
             });
+        }
+
+        [HttpGet("our-customers")]
+        public async Task<ActionResult<ApiResponse>> GetOurCustomers()
+        {
+            Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0
+                && x.UserProjects.All(u => u.Role.ToLower() == "customer")
+                && x.UserProjects.All(p=> p.Project.Status == "completed");
+
+            var usersList = await unitOfWork.userRepository.GetAll(filter, "UserProjects.Project");
+
+            var ourCustomer = mapper.Map<List<OurCustomerDTO>>(usersList);
+
+            return new ApiResponse(200, "Users retrieved successfully", ourCustomer);
         }
 
 

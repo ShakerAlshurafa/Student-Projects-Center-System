@@ -2,6 +2,6 @@
 {
     public class CreateStudentDTO
     {
-        public List<string> usersId { get; set; } = new List<string>();
+        public List<string> usersIds { get; set; } = new List<string>();
     }
 }

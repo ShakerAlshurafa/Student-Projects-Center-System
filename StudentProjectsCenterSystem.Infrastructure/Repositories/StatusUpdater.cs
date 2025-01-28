@@ -1,4 +1,6 @@
-﻿using StudentProjectsCenter.Core.IRepositories;
+﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using StudentProjectsCenter.Core.IRepositories;
+using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Infrastructure.Data;
 using System.Linq.Expressions;
 
@@ -44,6 +46,22 @@ namespace StudentProjectsCenter.Infrastructure.Repositories
                 property.SetValue(item, Convert.ChangeType(newData, property.PropertyType));
             }
 
+            await dbContext.SaveChangesAsync();
+        }
+
+
+        public async Task DeleteAsync(Expression<Func<T, bool>>? expression)
+        {
+            if (expression == null)
+            {
+                throw new ArgumentException("No Expression Found!");
+            }
+
+            var items = dbContext.Set<T>()
+                .Where(expression)
+                .ToList();
+
+            dbContext.Set<T>().RemoveRange(items);
             await dbContext.SaveChangesAsync();
         }
     }

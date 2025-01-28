@@ -88,7 +88,6 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "Tasks retrieved successfully.", taskDto));
         }
 
-        [Authorize(Roles = "supervisor")]
         [HttpPost("{workgroupId}")]
         public async Task<ActionResult<ApiResponse>> Create(
             int workgroupId,
@@ -195,8 +194,6 @@ namespace StudentProjectsCenterSystem.Controllers
                 new ApiResponse(201, "Task created successfully", result: task.Id));
         }
 
-
-        [Authorize(Roles = "supervisor")]
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
             int id,
@@ -371,8 +368,6 @@ namespace StudentProjectsCenterSystem.Controllers
             }));
         }
 
-
-        [Authorize(Roles = "supervisor")]
         [HttpPut("{id}/change-status")]
         public async Task<ActionResult<ApiResponse>> ChangeStatus(
             int id,
@@ -519,7 +514,6 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "File submitted successfully."));
         }
 
-        [Authorize(Roles = "supervisor")]
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse>> Delete(int id)
         {
