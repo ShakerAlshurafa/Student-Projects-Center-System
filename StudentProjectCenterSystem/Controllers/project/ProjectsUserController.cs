@@ -137,6 +137,7 @@ namespace StudentProjectsCenter.Controllers.project
 
             existingProject.Status = "active";
 
+            unitOfWork.projectRepository.Update(existingProject);
             int successSave = await unitOfWork.save();
             if (successSave == 0)
             {

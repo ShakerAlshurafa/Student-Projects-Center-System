@@ -13,7 +13,7 @@ namespace StudentProjectsCenter.Core.Entities.DTO.Workgroup
         public string Role { get; set; } = string.Empty;
 
         public string SupervisorName { get; set; } = string.Empty;
-        public string? CoSupervisorName { get; set; } = string.Empty;
+        public List<string?> CoSupervisorName { get; set; } 
         public string CustomerName { get; set; } = string.Empty;
         public string Company { get; set; } = string.Empty;
         public List<string> Team { get; set; } = new List<string>();
