@@ -136,7 +136,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         }
 
 
-        public async Task<int> Count(Expression<Func<T, bool>>? filter)
+        public async Task<int> Count(Expression<Func<T, bool>>? filter, string? includeProperty = null)
         {
             IQueryable<T> query = dbContext.Set<T>();
             if (filter != null)

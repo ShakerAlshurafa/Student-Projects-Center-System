@@ -15,6 +15,7 @@ namespace StudentProjectsCenter.Core.Entities.DTO.Project
         [Required]
         public string Status { get; set; } = string.Empty;
         public string? ChangeStatusNotes { get; set; } = string.Empty;
+        public string? CompanyName { get; set; }
 
     }
 }

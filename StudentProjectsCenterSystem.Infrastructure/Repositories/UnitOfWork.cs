@@ -20,7 +20,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
         public IMessageRepository messageRepository { get; set; }
         public ICelenderRepository celenderRepository { get; set; }
 
-
         public UnitOfWork(ApplicationDbContext dbContext)
         {
             this.dbContext = dbContext;

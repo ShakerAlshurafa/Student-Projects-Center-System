@@ -1,10 +1,11 @@
-﻿using StudentProjectsCenterSystem.Core.Entities.project;
+﻿using StudentProjectsCenter.Core.Entities.DTO.ProjectDetails;
 
 namespace StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails
 {
     public class ProjectDetailEntityDTO
     {
+        public int? SectionId { get; set; }
         public string SectionName { get; set; } = string.Empty;
-        public List<ProjectDetailEntity> details { get; set; } = new List<ProjectDetailEntity>();
+        public List<ProjectDetailDTO> details { get; set; } = new List<ProjectDetailDTO>();
     }
 }

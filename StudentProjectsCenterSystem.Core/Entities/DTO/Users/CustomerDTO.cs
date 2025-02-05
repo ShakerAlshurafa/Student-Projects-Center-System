@@ -13,6 +13,6 @@ namespace StudentProjectsCenter.Core.Entities.DTO.Users
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Company { get; set; } = string.Empty;
-        public string WorkgroupName { get; set; } = string.Empty;
+        public List<string> WorkgroupName { get; set; } = new List<string>();
     }
 }

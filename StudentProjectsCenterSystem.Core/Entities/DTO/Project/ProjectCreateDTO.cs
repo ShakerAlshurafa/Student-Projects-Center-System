@@ -10,5 +10,6 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Project
         public string SupervisorId { get; set; } = string.Empty;
         [Required]
         public string CustomerId { get; set; } = string.Empty;
+        public string? CompanyName {  get; set; }
     }
 }

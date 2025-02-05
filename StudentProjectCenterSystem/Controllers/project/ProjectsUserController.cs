@@ -67,6 +67,26 @@ namespace StudentProjectsCenter.Controllers.project
             });
         }
 
+        [HttpPut("{projectId}/overview")]
+        public async Task<ActionResult<ApiResponse>> UpdateOverview(int projectId, [FromQuery] string overview)
+        {
+            var project = await unitOfWork.projectRepository.GetById(projectId);
+            if (project == null)
+            {
+                return NotFound(new ApiResponse(404, "Project not found."));
+            }
+
+            project.Overview = overview;
+
+            unitOfWork.projectRepository.Update(project);
+            int successSave = await unitOfWork.save();
+            if (successSave == 0)
+            {
+                return StatusCode(500, new ApiResponse(500, "Update Failed"));
+            }
+
+            return Ok(new ApiResponse(200, "Project updated successfully"));
+        }
 
         [Authorize(Roles = "supervisor,admin")]
         [HttpPost("students")]
@@ -261,6 +281,7 @@ namespace StudentProjectsCenter.Controllers.project
 
             return Ok(new ApiResponse(200, "Co-Supervisor added successfully."));
         }
+
 
         [Authorize(Roles = "supervisor,admin")]
         [HttpDelete("{projectId}/co-supervisor")]

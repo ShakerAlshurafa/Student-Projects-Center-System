@@ -10,7 +10,7 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.Authentication
         public string FirstName { get; set; } = string.Empty;
 
         [StringLength(50, ErrorMessage = "Middle name cannot exceed 50 characters.")]
-        public string MiddleName { get; set; } = string.Empty;
+        public string? MiddleName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Last name is required.")]
         [StringLength(50, ErrorMessage = "Last name cannot exceed 50 characters.")]

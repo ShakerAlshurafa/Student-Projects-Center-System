@@ -11,6 +11,7 @@ using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Net.NetworkInformation;
 using System.Security.Claims;
 using System.Threading.Channels;
 
@@ -47,7 +48,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             Expression<Func<WorkgroupTask, bool>> filter = t => t.Workgroup.Project != null &&
                 t.Workgroup.Project.UserProjects
-                    .Any(u => u.Role == "supervisor" && u.UserId == supervisorId);
+                    .Any(u => u.Role == "supervisor" && u.UserId == supervisorId && !u.IsDeleted);
 
             // Fetch tasks for the specified workgroup with pagination
             var tasks = await unitOfWork.taskRepository.GetAll(filter: filter, "Workgroup.Project.UserProjects");
@@ -88,6 +89,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "Tasks retrieved successfully.", taskDto));
         }
 
+        [Authorize(Roles = "supervisor")]
         [HttpPost("{workgroupId}")]
         public async Task<ActionResult<ApiResponse>> Create(
             int workgroupId,
@@ -123,19 +125,16 @@ namespace StudentProjectsCenterSystem.Controllers
             }
 
 
-            var countCompleteTasks = await unitOfWork.taskRepository.Count(t =>
-                t.WorkgroupId == workgroupId && t.Status.ToLower() == "complete");
+            var countCompletedTasks = await unitOfWork.taskRepository.Count(t =>
+                t.WorkgroupId == workgroupId && t.Status.ToLower() == "completed",
+                includeProperty: "Workgroup");
             var countAllTasks = await unitOfWork.taskRepository.Count(t =>
-                    t.WorkgroupId == workgroup.Id && t.Status.ToLower() != "canceled");
+                t.WorkgroupId == workgroup.Id && t.Status.ToLower() != "canceled",
+                includeProperty: "Workgroup");
+            countAllTasks++;
 
-            if (countAllTasks == 0)
-            {
-                workgroup.Progress = 0;
-            }
-            else
-            {
-                workgroup.Progress = (int)(((double)countCompleteTasks / countAllTasks) * 100);
-            }
+            workgroup.Progress = countAllTasks == 0 ?  100 :
+                    (int)(((double)countCompletedTasks / countAllTasks) * 100);
 
             // Check if dates are in the future
             if (taskDto.Start < DateTime.UtcNow || taskDto.End < DateTime.UtcNow)
@@ -194,6 +193,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 new ApiResponse(201, "Task created successfully", result: task.Id));
         }
 
+        [Authorize(Roles = "supervisor")]
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
             int id,
@@ -353,7 +353,6 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, result: taskDto));
         }
 
-        [Authorize]
         [HttpGet("task-statuses")]
         public ActionResult<ApiResponse> GetTaskStatuses()
         {
@@ -368,6 +367,7 @@ namespace StudentProjectsCenterSystem.Controllers
             }));
         }
 
+        [Authorize(Roles ="supervisor")]
         [HttpPut("{id}/change-status")]
         public async Task<ActionResult<ApiResponse>> ChangeStatus(
             int id,
@@ -379,7 +379,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiResponse(400, "Status is required."));
             }
 
-            status = status.ToLower();
+            status = status.Trim().ToLower();
 
             var taskStatus = new List<string> { "completed", "rejected", "canceled" };
             if (!taskStatus.Contains(status))
@@ -395,33 +395,40 @@ namespace StudentProjectsCenterSystem.Controllers
                 return NotFound(new ApiResponse(404, "Task not found."));
             }
 
-            if (existingTask.Status.ToLower() == "complete" || status.ToLower() == "complete")
+            if (existingTask.Status.ToLower() == status)
             {
-                var workgroup = await unitOfWork.workgroupRepository.GetById(existingTask.WorkgroupId);
+                return BadRequest(new ApiResponse(400, "The status is already set to the specified task."));
+            }
+
+
+            // Retrieve workgroup only if necessary
+            Workgroup? workgroup = null;
+            if (status == "completed" || existingTask.Status.ToLower() == "completed")
+            {
+                workgroup = await unitOfWork.workgroupRepository.GetById(existingTask.WorkgroupId);
                 if (workgroup == null)
                 {
-                    return NotFound($"Workgroup with ID {existingTask.WorkgroupId} was not found.");
+                    return NotFound(new ApiResponse(404, $"Workgroup with ID {existingTask.WorkgroupId} was not found."));
                 }
+                
+                int countCompletedTasks = await unitOfWork.taskRepository.Count(t =>
+                    t.WorkgroupId == workgroup.Id && t.Status.ToLower() == "completed");
 
-                var countCompleteTasks = await unitOfWork.taskRepository.Count(t =>
-                    t.WorkgroupId == workgroup.Id && t.Status.ToLower() == "complete");
-                var countAllTasks = await unitOfWork.taskRepository.Count(t => 
+                int countAllTasks = await unitOfWork.taskRepository.Count(t =>
                     t.WorkgroupId == workgroup.Id && t.Status.ToLower() != "canceled");
 
-                if (countAllTasks == 0)
-                {
-                    workgroup.Progress = 0;
-                }
-                else
-                {
-                    workgroup.Progress = (int)(((double)countCompleteTasks / countAllTasks) * 100);
-                }
+                // Adjust the count when status changes
+                if (status == "completed") countCompletedTasks++;
+                if (existingTask.Status.ToLower() == "completed") countCompletedTasks--;
 
-                unitOfWork.workgroupRepository.Update(workgroup); // Save the updated workgroup         
+                workgroup.Progress = countAllTasks == 0 ? (status == "completed" ? 100 : 0) :
+                    (int)(((double)countCompletedTasks / countAllTasks) * 100);
+
+                unitOfWork.workgroupRepository.Update(workgroup);
             }
 
             // Update the status
-            existingTask.Status = status.ToLower();
+            existingTask.Status = status;
 
             unitOfWork.taskRepository.Update(existingTask); // Save the updated task
 
@@ -459,12 +466,13 @@ namespace StudentProjectsCenterSystem.Controllers
                         .Any(u => u.Role == "student" && u.UserId == studentId);
 
             var tasks = await unitOfWork.taskRepository.GetAll(filter, "Workgroup.Project.UserProjects");
-
             var task = tasks.FirstOrDefault();
             if (task == null)
             {
                 return NotFound(new ApiResponse(404, "Task or student not found."));
             }
+
+            if(task.Status.ToLower() == "canceled" || task.Status.ToLower() == "completed")
 
             // Ensure the task is not end
             if (task.End <= DateTime.UtcNow)
@@ -514,6 +522,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "File submitted successfully."));
         }
 
+        [Authorize(Roles = "supervisor")]
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse>> Delete(int id)
         {

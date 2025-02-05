@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace StudentProjectsCenterSystem.Core.Entities.DTO.MyProject
 {
@@ -11,6 +12,6 @@ namespace StudentProjectsCenterSystem.Core.Entities.DTO.MyProject
         [Required(ErrorMessage = "Description is required.")]
         [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
         public string Description { get; set; } = string.Empty;
-        public byte[]? IconData { get; set; } = Array.Empty<byte>();
+        public IFormFile? image { get; set; }
     }
 }

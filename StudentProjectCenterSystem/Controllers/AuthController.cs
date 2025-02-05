@@ -56,11 +56,23 @@ namespace StudentProjectsCenterSystem.Controllers
         public async Task<IActionResult> Register(
             [FromBody, Required] RegisterationRequestDTO model)
         {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage).ToList();
+
+                return BadRequest(new ApiValidationResponse(errors));
+            }
+
+            model.FirstName = model.FirstName.Replace(" ", "");
+            model.MiddleName = model.MiddleName?.Replace(" ", "");
+            model.LastName = model.LastName.Replace(" ", "");
+
             var response = await authRepository.Register(model);
 
-            if (response is ApiValidationResponse validationResponse)
+            if (response is ApiValidationResponse)
             {
-                return BadRequest(validationResponse);
+                return BadRequest(response);
             }
             else if (response is ApiResponse apiResponse && !apiResponse.IsSuccess)
             {

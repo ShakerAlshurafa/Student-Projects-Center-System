@@ -27,11 +27,8 @@ namespace StudentProjectsCenterSystem.Controllers
         }
 
 
-        [HttpGet("{PageSize}/{PageNumber}")]
-        public async Task<ActionResult<ApiResponse>> GetAll(
-            [FromQuery] string? workgroupName = null,
-            int PageSize = 6,
-            int PageNumber = 1)
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? workgroupName = null)
         {
             Expression<Func<Workgroup, bool>> filter = x =>
                 x.Project != null && x.Project.UserProjects.Any(u => !u.IsDeleted);
@@ -40,7 +37,7 @@ namespace StudentProjectsCenterSystem.Controllers
                 filter = x => x.Name.Contains(workgroupName);
             }
 
-            var model = await unitOfWork.workgroupRepository.GetAll(filter, PageSize, PageNumber, "Project.UserProjects.User");
+            var model = await unitOfWork.workgroupRepository.GetAll(filter, "Project.UserProjects.User");
 
             if (!model.Any())
             {
@@ -49,22 +46,25 @@ namespace StudentProjectsCenterSystem.Controllers
 
             var workgroupDTOs = model.Select(w =>
             {
-                var userProjects = w?.Project?.UserProjects ?? new List<UserProject>();
-                var customer = userProjects.FirstOrDefault(u => u.Role == "customer");
+                var userProjects = w?.Project?.UserProjects
+                    .Where(u => u.ProjectId == w.Project.Id && !u.IsDeleted) 
+                    ?? new List<UserProject>();
+                var customer = userProjects
+                        .FirstOrDefault(u => u?.Role == "customer" && !u.IsDeleted);
                 return new AllWorkgroupsDTO
                 {
                     Id = w.Id,
                     Name = w.Name,
                     SupervisorName = userProjects
-                                        .FirstOrDefault(u => u.Role == "supervisor")?.User.UserName ?? string.Empty,
+                                        .FirstOrDefault(u => u?.Role == "supervisor")?.User.UserName ?? string.Empty,
                     CoSupervisorName = userProjects
-                                        .Where(u => u.Role == "co-supervisor")
+                                        .Where(u => u?.Role == "co-supervisor" && !u.IsDeleted)
                                         .Select(u => u.User.UserName)
                                         .ToList(),
                     CustomerName = customer?.User.UserName ?? string.Empty,
-                    Company = customer?.User.CompanyName ?? string.Empty,
+                    Company = w?.Project?.CompanyName ?? string.Empty,
                     Team = userProjects
-                                .Where(up => up.Role == "student")?
+                                .Where(u => u?.Role == "student" && !u.IsDeleted)?
                                 .Select(up => up?.User?.FirstName + " " + up?.User?.LastName)
                                 .ToList()
                                 ?? new List<string>(),
@@ -96,6 +96,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             // Filter workgroups where the logged-in user is associated
             Expression<Func<Workgroup, bool>> filter = x => x.Project != null &&
+                x.Project.UserProjects != null &&
                 x.Project.UserProjects.Any(up => up.UserId == userId && !up.IsDeleted);
 
             var workgroups = await unitOfWork.workgroupRepository.GetAll(filter, PageSize, PageNumber, "Project.UserProjects.User");
@@ -106,7 +107,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
             var role = workgroups
                 .Select(p => p?.Project?.UserProjects
-                    .Where(u => u.UserId == userId)
+                    .Where(u => u.UserId == userId && !u.IsDeleted)
                     .Select(u => u.Role)
                     .FirstOrDefault())
                 .FirstOrDefault();
@@ -115,21 +116,23 @@ namespace StudentProjectsCenterSystem.Controllers
             var workgroupDTOs = workgroups.Select(w =>
             {
                 var userProjects = w?.Project?.UserProjects ?? new List<UserProject>();
-                var customer = userProjects.FirstOrDefault(u => u.Role == "customer");
+                var customer = userProjects
+                        .FirstOrDefault(u => u.Role == "customer" && !u.IsDeleted);
                 return new AllWorkgroupsDTO
                 {
                     Id = w.Id,
                     Name = w.Name,
                     Role = role ?? "",
-                    SupervisorName = userProjects.FirstOrDefault(u => u.Role == "supervisor")?.User.UserName ?? string.Empty,
+                    SupervisorName = userProjects
+                        .FirstOrDefault(u => u.Role == "supervisor" && !u.IsDeleted)?.User.UserName ?? string.Empty,
                     CoSupervisorName = userProjects
-                                        .Where(u => u.Role == "co-supervisor")
+                                        .Where(u => u.Role == "co-supervisor" && !u.IsDeleted)
                                         .Select(u => u.User.UserName)
                                         .ToList(),
                     CustomerName = customer?.User.UserName ?? string.Empty,
-                    Company = customer?.User.CompanyName ?? string.Empty,
+                    Company = w?.Project?.CompanyName ?? string.Empty,
                     Team = userProjects
-                        .Where(u => u.Role == "student" && u.User?.UserName != null)
+                        .Where(u => u.Role == "student" && u.User?.UserName != null && !u.IsDeleted)
                         .Select(u => u.User!.UserName!)
                         .ToList() ?? new List<string>()
                 };
@@ -143,7 +146,6 @@ namespace StudentProjectsCenterSystem.Controllers
                 Workgroups = workgroupDTOs
             }));
         }
-
 
 
         [HttpGet("{id}")]

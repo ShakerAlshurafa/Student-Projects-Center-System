@@ -36,7 +36,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         // Get all users
-        [Authorize(Roles = "admin, supervisor")]
+        [Authorize(Roles = "admin,supervisor")]
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll()
         {
@@ -53,6 +53,8 @@ namespace StudentProjectsCenterSystem.Controllers
                         new[] { user.FirstName, user.MiddleName, user.LastName }
                             .Where(name => !string.IsNullOrWhiteSpace(name))),
                     Email = user.Email ?? "",
+                    Address = user.Address,
+                    PhoneNumber = user.PhoneNumber,
                     Role = roles.ToList() ?? new List<string> { "No Role" }
                 });
             }
@@ -101,7 +103,7 @@ namespace StudentProjectsCenterSystem.Controllers
             });
         }
 
-
+        [Authorize(Roles = "admin")]
         [HttpGet("supervisors")]
         public async Task<ActionResult<ApiResponse>> GetSupervisors()
         {
@@ -111,9 +113,12 @@ namespace StudentProjectsCenterSystem.Controllers
             foreach (var user in supervisors)
             {
                 Expression<Func<Project, bool>> filter = x => x.UserProjects
-                    .Any(u => u.UserId == user.Id);
+                    .Any(u => u.UserId == user.Id && !u.IsDeleted);
                 var projects = await unitOfWork.projectRepository.GetAll(filter, "UserProjects");
                 var projectsName = projects.Select(p => p.Name).ToList();
+                var CountActive = projects.Count(p => p.Status == "active");
+                var CountCompleted = projects.Count(p => p.Status == "completed");
+
                 userDTOs.Add(new SupervisorDTO
                 {
                     Id = user.Id,
@@ -122,6 +127,8 @@ namespace StudentProjectsCenterSystem.Controllers
                     LastName = user.LastName,
                     Email = user.Email ?? "",
                     ProjectsName = projectsName,
+                    CountActive = CountActive,
+                    CountCompleted = CountCompleted
                 });
             }
 
@@ -151,29 +158,27 @@ namespace StudentProjectsCenterSystem.Controllers
             }
         }
 
-
-        [HttpGet("students/{PageSize}/{PageNumber}")]
-        public async Task<ActionResult<ApiResponse>> GetStudents(
-            int PageSize = 6,
-            int PageNumber = 1)
+        [Authorize(Roles = "admin")]
+        [HttpGet("students")]
+        public async Task<ActionResult<ApiResponse>> GetStudents()
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
                 x.UserProjects.Any(u => u.Role.ToLower() == "student");
 
-            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber, "UserProjects.Project");
+            var usersList = await unitOfWork.userRepository.GetAll(filter, "UserProjects.Project");
 
             var userDTOs = new List<StudentDTO>();
 
             foreach (var user in usersList)
             {
-                var project = user.UserProjects?
+                var projects = user.UserProjects?
                     .Where(u => u.UserId == user.Id)
-                    .Select(p => new
+                    .Select(p => new UserProjectDTO()
                     {
-                        p.Project.Status,
-                        p.Project.Name
+                        Name = p.Project.Name,
+                        Status = p?.Project?.Status ?? ""
                     })
-                    .FirstOrDefault();
+                    .ToList();
 
                 userDTOs.Add(new StudentDTO
                 {
@@ -182,8 +187,7 @@ namespace StudentProjectsCenterSystem.Controllers
                     MiddleName = user.MiddleName,
                     LastName = user.LastName,
                     Email = user.Email ?? "",
-                    ProjectName = project?.Name ?? "",
-                    ProjectStatus = project?.Status ?? ""
+                    Projects = projects
                 });
             }
 
@@ -196,26 +200,65 @@ namespace StudentProjectsCenterSystem.Controllers
             });
         }
 
+        [Authorize(Roles = "admin")]
+        [HttpGet("co-supervisor")]
+        public async Task<ActionResult<ApiResponse>> GetCoSupervisor()
+        {
+            Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
+                x.UserProjects.Any(u => u.Role.ToLower() == "co-supervisor");
+
+            var usersList = await unitOfWork.userRepository.GetAll(filter, "UserProjects.Project");
+
+            var userDTOs = new List<StudentDTO>();
+
+            foreach (var user in usersList)
+            {
+                var projects = user.UserProjects?
+                    .Where(u => u.UserId == user.Id)
+                    .Select(p => new UserProjectDTO()
+                    {
+                        Name = p.Project.Name,
+                        Status = p?.Project?.Status ?? ""
+                    })
+                    .ToList();
+
+                userDTOs.Add(new StudentDTO
+                {
+                    Id = user.Id,
+                    FirstName = user.FirstName,
+                    MiddleName = user.MiddleName,
+                    LastName = user.LastName,
+                    Email = user.Email ?? "",
+                    Projects = projects
+                });
+            }
+
+            int users_count = await unitOfWork.userRepository.Count(filter);
+
+            return new ApiResponse(200, "Users retrieved successfully", new
+            {
+                Total = users_count,
+                CoSupervisor = userDTOs
+            });
+        }
 
         [Authorize(Roles = "admin")]
-        [HttpGet("customers/{PageSize}/{PageNumber}")]
-        public async Task<ActionResult<ApiResponse>> GetCustomers(
-            int PageSize = 6,
-            int PageNumber = 1)
+        [HttpGet("customers")]
+        public async Task<ActionResult<ApiResponse>> GetCustomers()
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0 &&
                 x.UserProjects.All(u => u.Role.ToLower() == "customer");
 
-            var usersList = await unitOfWork.userRepository.GetAll(filter, PageSize, PageNumber, "UserProjects.Project");
+            var usersList = await unitOfWork.userRepository.GetAll(filter, "UserProjects.Project");
 
             var userDTOs = new List<CustomerDTO>();
 
             foreach (var user in usersList)
             {
-                var workgroupName = user.UserProjects?
+                var workgroups = user.UserProjects?
                     .Where(u => u.UserId == user.Id)
                     .Select(p => p.Project.Name)
-                    .FirstOrDefault() ?? "";
+                    .ToList();
 
                 userDTOs.Add(new CustomerDTO
                 {
@@ -223,8 +266,10 @@ namespace StudentProjectsCenterSystem.Controllers
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email ?? "", // Ensure Email is never null
-                    WorkgroupName = workgroupName,
-                    Company = user.CompanyName ?? ""
+                    WorkgroupName = workgroups ?? new List<string>(),
+                    Company = user?.UserProjects?
+                    .Where(p => p.ProjectId == p.Project.Id)
+                    .Select(p => p.Project.CompanyName).FirstOrDefault() ?? ""
                 });
             }
             int users_count = await unitOfWork.userRepository.Count(filter);
@@ -240,8 +285,8 @@ namespace StudentProjectsCenterSystem.Controllers
         public async Task<ActionResult<ApiResponse>> GetOurCustomers()
         {
             Expression<Func<LocalUser, bool>> filter = x => x.UserProjects.Count > 0
-                && x.UserProjects.All(u => u.Role.ToLower() == "customer")
-                && x.UserProjects.All(p=> p.Project.Status == "completed");
+                && x.UserProjects.Any(u => u.Role.ToLower() == "customer" && !u.IsDeleted)
+                && x.UserProjects.Any(p=> p.Project.Status == "completed");
 
             var usersList = await unitOfWork.userRepository.GetAll(filter, "UserProjects.Project");
 
@@ -262,20 +307,20 @@ namespace StudentProjectsCenterSystem.Controllers
 
             var supervisorsActiveCount = await unitOfWork.userRepository.Count(
                 x => x.UserProjects.Count > 0 &&
-                x.UserProjects.All(u => u.Role.ToLower() == "supervisor" && !u.IsDeleted)
+                x.UserProjects.All(u => u.Role.ToLower() == "supervisor")
             );
             var co_supervisorsActiveCount = await unitOfWork.userRepository.Count(
                 x => x.UserProjects.Count > 0 &&
-                x.UserProjects.All(u => u.Role.ToLower() == "co-supervisor" && !u.IsDeleted)
+                x.UserProjects.All(u => u.Role.ToLower() == "co-supervisor")
             );
 
             var customersCount = await unitOfWork.userRepository.Count(
                 x => x.UserProjects.Count > 0 &&
-                x.UserProjects.All(u => u.Role.ToLower() == "customer" && !u.IsDeleted)
+                x.UserProjects.All(u => u.Role.ToLower() == "customer")
             );
             var StudentsCount = await unitOfWork.userRepository.Count(
                 x => x.UserProjects.Count > 0 &&
-                x.UserProjects.All(u => u.Role.ToLower() == "student" && !u.IsDeleted)
+                x.UserProjects.All(u => u.Role.ToLower() == "student")
             );
 
             var projectsActiveCount = await unitOfWork.projectRepository.Count(x => x.Status == "active");
