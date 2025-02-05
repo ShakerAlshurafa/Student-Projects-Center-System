@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenter.Core.Entities.DTO.Project;
+using StudentProjectsCenter.Core.Entities.DTO.ProjectDetails;
 using StudentProjectsCenter.Core.Entities.DTO.Users;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Project;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
@@ -25,6 +26,10 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 .ThenInclude(up => up.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
+            var sections = await dbContext.ProjectDetailsSections
+                .Include(p => p.ProjectDetails)
+                .Where(d => d.ProjectId == id)
+                .ToListAsync();
             var details = await dbContext.ProjectDetails
                 .Include(p => p.ProjectDetailsSection)
                 .Where(d => d.ProjectDetailsSection != null && d.ProjectDetailsSection.ProjectId == id)
@@ -49,13 +54,25 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 Name = project?.Name ?? "",
                 Overview = project?.Overview ?? "",
                 Status = project?.Status ?? "",
-                ProjectDetails = details
-                    .GroupBy(d => d?.ProjectDetailsSection?.Name ?? string.Empty)
+                ProjectDetails = sections
+                    .GroupBy(section => new
+                    {
+                        SectionID = section?.Id,
+                        SectionName = section?.Name ?? string.Empty
+                    })
                     .Select(group => new ProjectDetailEntityDTO
                     {
-                        SectionName = group.Key,
-                        details = group.ToList()
-                    }).ToList(),
+                        SectionId = group.Key.SectionID,
+                        SectionName = group.Key.SectionName,
+                        details = group.SelectMany(section => section.ProjectDetails.Select(detail => new ProjectDetailDTO
+                        {
+                            Id = detail.Id,
+                            Title = detail.Title,
+                            Description = detail.Description,
+                            ImagePath = detail.ImagePath
+                        })).ToList()
+                    })
+                    .ToList(),
 
                 SupervisorJoinAt = supervisor?.JoinAt,
                 SupervisorId = supervisor?.UserId ?? "",
@@ -71,7 +88,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                                     .Select(up => new TeamDTO
                                     {
                                         Id = up.User?.Id ?? string.Empty,
-                                        Name = $"{up.User?.FirstName} {up.User?.LastName}".Trim()
+                                        Name = $"{up.User?.FirstName} {up.User?.LastName}".Trim(),
+                                        JoinAt = up.JoinAt
                                     })
                                     .ToList()
                                     ?? new List<TeamDTO>(),

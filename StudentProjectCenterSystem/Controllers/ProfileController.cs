@@ -1,21 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
-using StudentProjectsCenterSystem.Core.Entities;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
-using StudentProjectsCenter.Core.Entities.Domain;
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using StudentProjectsCenter.Core.Entities.DTO.Users;
-using StudentProjectsCenterSystem.Core.Entities.project;
-using StudentProjectsCenterSystem.Infrastructure.Repositories;
-using System.Linq.Expressions;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentProjectsCenter.Core.Entities.DTO.Profile;
+using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
-using StudentProjectsCenterSystem.Core.Entities.DTO.Authentication;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace StudentProjectsCenter.Controllers
 {
@@ -29,7 +21,7 @@ namespace StudentProjectsCenter.Controllers
         private readonly IMapper mapper;
 
         public ProfileController(
-            IWebHostEnvironment environment, 
+            IWebHostEnvironment environment,
             UserManager<LocalUser> userManager,
             IMapper mapper)
         {
@@ -115,7 +107,7 @@ namespace StudentProjectsCenter.Controllers
         }
         */
 
-        
+
         [HttpGet("user-info")]
         public async Task<ActionResult<ApiResponse>> GetUserInfo()
         {
@@ -251,6 +243,7 @@ namespace StudentProjectsCenter.Controllers
             user.PhoneNumber = userProfileDTO.PhoneNumber;
             user.Address = userProfileDTO.Address;
             user.UserName = userProfileDTO.FirstName + "_" + userProfileDTO.LastName;
+            user.CompanyName = userProfileDTO.CompanyName;
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)

@@ -134,7 +134,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                 MiddleName = registerationRequestDTO.MiddleName,
                 LastName = registerationRequestDTO.LastName,
                 CompanyName = registerationRequestDTO.CompanyName ?? "",
-                ProfileImageUrl = $"{request?.Scheme}://{request?.Host}/profile-default-picture.png"
+                ProfileImageUrl = "https://spcs.blob.core.windows.net/uploads/profile-default-picture.png"
             };
 
             using (var transaction = await dbContext.Database.BeginTransactionAsync())

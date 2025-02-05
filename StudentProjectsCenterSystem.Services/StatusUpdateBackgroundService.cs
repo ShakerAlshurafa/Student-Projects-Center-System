@@ -16,7 +16,7 @@ namespace StudentProjectsCenter.Services
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             // Start a timer that calls UpdateStatuses periodically
-            _timer = new Timer(UpdateStatuses, stoppingToken, TimeSpan.Zero, TimeSpan.FromHours(1));
+            _timer = new Timer(UpdateStatuses, stoppingToken, TimeSpan.Zero, TimeSpan.FromMinutes(30));
             await Task.CompletedTask;
         }
 

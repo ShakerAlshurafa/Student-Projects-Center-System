@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
-using System;
+﻿using StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -22,7 +20,7 @@ namespace StudentProjectsCenterSystem.Core.Entities.Domain.workgroup
             *Canceled: Task is no longer needed and has been closed.
             Overdue:
         */
-        
+
         public DateTime? Start { get; set; }
         public DateTime? End { get; set; }
         public DateTime? LastUpdatedAt { get; set; }

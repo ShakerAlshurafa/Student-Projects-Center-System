@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenter.Core.Entities.DTO.Project;
 using StudentProjectsCenter.Core.IRepositories;
 using StudentProjectsCenterSystem.Core.Entities;
@@ -16,7 +15,7 @@ using System.Linq.Expressions;
 
 namespace StudentProjectsCenter.Controllers.project
 {
-    [Authorize(Roles ="admin")]
+    [Authorize(Roles = "admin")]
     [Route("api/admin/projects")]
     [ApiController]
     public class ProjectsAdminController : ControllerBase
@@ -36,19 +35,16 @@ namespace StudentProjectsCenter.Controllers.project
         }
 
 
-        [HttpGet("{PageSize}/{PageNumber}")]
+        [HttpGet]
         //[ResponseCache(CacheProfileName = "defaultCache")]
-        public async Task<ActionResult<ApiResponse>> GetAll(
-            [FromQuery] string? projectName = null, 
-            int PageSize = 6, 
-            int PageNumber = 1)
+        public async Task<ActionResult<ApiResponse>> GetAll([FromQuery] string? projectName = null)
         {
             Expression<Func<StudentProjectsCenterSystem.Core.Entities.project.Project, bool>> filter = x => true;
             if (!string.IsNullOrEmpty(projectName))
             {
                 filter = x => x.Name.Contains(projectName);
             }
-            var model = await unitOfWork.projectRepository.GetAll(filter, PageSize, PageNumber, "Workgroup,UserProjects.User"); ;
+            var model = await unitOfWork.projectRepository.GetAll(filter, "Workgroup,UserProjects.User"); ;
 
             if (!model.Any())
             {
@@ -78,8 +74,8 @@ namespace StudentProjectsCenter.Controllers.project
                                     ?? "No Co-Supervisor Assigned",
                     CustomerName = customer?.User?.FirstName + " " + customer?.User?.LastName
                                     ?? "No Customer Assigned",
-                    Company = customer?.User?.CompanyName
-                                    ?? "No Customer Assigned",
+                    Company = project?.CompanyName
+                                    ?? "No Company Name Assigned",
                     WorkgroupName = project?.Workgroup?.Name ?? "No Workgroup",
                     Team = project?.UserProjects?.Where(up => up.Role == "student" && !up.IsDeleted)?
                                     .Select(up => up?.User?.FirstName + " " + up?.User?.LastName)
@@ -89,8 +85,10 @@ namespace StudentProjectsCenter.Controllers.project
                 };
             }).ToList();
 
-            return new ApiResponse(200, "Projects retrieved successfully", new { 
-                Total = project_count, Projects = projectDTOs 
+            return new ApiResponse(200, "Projects retrieved successfully", new
+            {
+                Total = project_count,
+                Projects = projectDTOs
             });
         }
 
@@ -98,17 +96,18 @@ namespace StudentProjectsCenter.Controllers.project
         [HttpGet("{projectId}/archive/users")]
         public async Task<ActionResult<ApiResponse>> GetDeletedUsers(int projectId)
         {
-            var users = await unitOfWork.projectRepository.GetById(projectId, "UserProjects");
+            var users = await unitOfWork.projectRepository.GetById(projectId, "UserProjects.User");
             var deletedUsers = users.UserProjects
                 .Where(u => u.IsDeleted)
                 .Select(u => new
                 {
-                    u.UserId,
-                    u.Role,
-                    u.JoinAt,
-                    u.DeletededAt,
-                    u.DeletedNotes
-                });
+                    Id = u.UserId,
+                    Name = u.User.UserName ?? "",
+                    role = u.Role,
+                    JoinAt = u.JoinAt,
+                    DeletededAt = u.DeletededAt,
+                    DeletedNotes = u.DeletedNotes
+                }).ToList();
 
 
             if (!deletedUsers.Any())
@@ -157,6 +156,7 @@ namespace StudentProjectsCenter.Controllers.project
                 Name = project.Name,
                 StartDate = DateTime.Now,
                 Workgroup = workgroup,
+                CompanyName = project.CompanyName,
                 UserProjects = new List<UserProject>
                 {
                     new UserProject { UserId = supervisor.Id, Role = "supervisor" },
@@ -244,7 +244,7 @@ namespace StudentProjectsCenter.Controllers.project
 
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
-            int id, 
+            int id,
             [FromBody] UpdateProjectDTO updateProjectDTO)
         {
             if (!ModelState.IsValid)
@@ -256,7 +256,7 @@ namespace StudentProjectsCenter.Controllers.project
             }
 
             // Find the project by id
-            var existingProject = await unitOfWork.projectRepository.GetById(id, "UserProjects");
+            var existingProject = await unitOfWork.projectRepository.GetById(id, "Workgroup,UserProjects");
             if (existingProject == null)
             {
                 return NotFound(new ApiResponse(404, "Project not found."));
@@ -281,23 +281,38 @@ namespace StudentProjectsCenter.Controllers.project
                 return BadRequest(new ApiResponse(400, "The user is not a supervisor."));
             }
 
-            var oldSupervisorEntry = existingProject.UserProjects
+            var users = existingProject.UserProjects;
+
+            var oldSupervisorEntry = users
                             .FirstOrDefault(up => up.Role.ToLower() == "supervisor" && !up.IsDeleted);
 
-            if (oldSupervisorEntry != null && oldSupervisorEntry.UserId != updateProjectDTO.SupervisorId)
+            var deletedSupervisor = users
+                            .Where(u => u.UserId == updateProjectDTO.SupervisorId)
+                            .FirstOrDefault();
+            if (deletedSupervisor != null)
             {
-                    existingProject.UserProjects.Remove(oldSupervisorEntry);
-
+                users.Remove(deletedSupervisor);
+                deletedSupervisor.IsDeleted = false;
+                users.Add(deletedSupervisor);
+            }
+            else if (oldSupervisorEntry == null || oldSupervisorEntry.UserId != updateProjectDTO.SupervisorId)
+            {
+                if (oldSupervisorEntry != null)
+                {
+                    users.Remove(oldSupervisorEntry);
                     oldSupervisorEntry.IsDeleted = true;
                     oldSupervisorEntry.DeletedNotes = updateProjectDTO.ChangeOldSupervisorNotes;
                     oldSupervisorEntry.DeletededAt = DateTime.UtcNow;
+                    users.Add(oldSupervisorEntry);
+                    
+                }
 
-                    existingProject.UserProjects.Add(oldSupervisorEntry);
-                    existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.SupervisorId, Role = "supervisor" });
-            }
-            else if(oldSupervisorEntry == null)
-            {
-                existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.SupervisorId, Role = "supervisor" });
+                var newSupervisorEntry = new UserProject { UserId = updateProjectDTO.SupervisorId, Role = "supervisor" };
+                if (newSupervisorEntry == null)
+                {
+                    return BadRequest(new ApiResponse(400, "Update Faild"));
+                }
+                users.Add(newSupervisorEntry);
             }
 
 
@@ -308,23 +323,36 @@ namespace StudentProjectsCenter.Controllers.project
                 return BadRequest(new ApiValidationResponse(new List<string> { $"Customer with ID {updateProjectDTO.CustomerId} not found." }));
             }
 
-            var oldCustomerEntry = existingProject.UserProjects
+            var oldCustomerEntry = users
                             .FirstOrDefault(up => up.Role.ToLower() == "customer" && !up.IsDeleted);
 
-            if (oldCustomerEntry != null && oldCustomerEntry.UserId != updateProjectDTO.CustomerId)
-            {
-                    existingProject.UserProjects.Remove(oldCustomerEntry);
+            var deletedCustomer = users
+                            .Where(u => u.UserId == updateProjectDTO.CustomerId)
+                            .FirstOrDefault();
 
+            if (deletedCustomer != null)
+            {
+                users.Remove(deletedCustomer);
+                deletedCustomer.IsDeleted = false;
+                users.Add(deletedCustomer);
+            }
+            else if (oldCustomerEntry == null || oldCustomerEntry.UserId != updateProjectDTO.CustomerId)
+            {
+                if (oldCustomerEntry != null)
+                {
+                    users.Remove(oldCustomerEntry);
                     oldCustomerEntry.IsDeleted = true;
                     oldCustomerEntry.DeletedNotes = updateProjectDTO.ChangeOldCustomerNotes;
                     oldCustomerEntry.DeletededAt = DateTime.UtcNow;
+                    users.Add(oldCustomerEntry);
+                }
 
-                    existingProject.UserProjects.Add(oldCustomerEntry);             
-                    existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.CustomerId, Role = "customer" });
-            }
-            else if (oldSupervisorEntry == null)
-            {
-                existingProject.UserProjects.Add(new UserProject { UserId = updateProjectDTO.CustomerId, Role = "customer" });
+                var newCustomerEntry = new UserProject { UserId = updateProjectDTO.CustomerId, Role = "customer" };
+                if (newCustomerEntry == null)
+                {
+                    return BadRequest(new ApiResponse(400, "Update Faild"));
+                }
+                users.Add(newCustomerEntry);
             }
 
             // Validate the new status
@@ -338,11 +366,14 @@ namespace StudentProjectsCenter.Controllers.project
             existingProject.Status = updateProjectDTO.Status.ToLower();
             existingProject.ChangeStatusNotes = updateProjectDTO.ChangeStatusNotes;
             existingProject.ChangeStatusAt = DateTime.UtcNow;
+            existingProject.UserProjects = users;
 
             if (existingProject.Status == "completed")
             {
                 existingProject.EndDate = DateTime.UtcNow;
             }
+
+            existingProject.CompanyName = updateProjectDTO.CompanyName;
 
             // Save the changes
             unitOfWork.projectRepository.Update(existingProject);

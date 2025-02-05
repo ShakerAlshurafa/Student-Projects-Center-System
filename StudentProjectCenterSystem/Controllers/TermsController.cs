@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenter.Core.Entities.Domain.Terms;
@@ -27,14 +28,15 @@ namespace StudentProjectsCenter.Controllers
         public async Task<ActionResult<ApiResponse>> Get()
         {
             var term = await unitOfWork.termRepository.GetAll(x => true);
-            if(term == null || !term.Any())
+            if (term == null || !term.Any())
             {
                 return new ApiResponse(200, "No date found.");
             }
 
-            return Ok(new ApiResponse(200, result:term));
+            return Ok(new ApiResponse(200, result: term));
         }
 
+        [Authorize(Roles = "admin")]
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> Create([FromBody, Required] TermDTO termDTO)
         {
@@ -47,7 +49,7 @@ namespace StudentProjectsCenter.Controllers
             }
 
             var isEmpty = await unitOfWork.termRepository.IsEmpty();
-            if(!isEmpty)
+            if (!isEmpty)
             {
                 return BadRequest(new ApiResponse(400, "A term already exists."));
             }
@@ -60,7 +62,8 @@ namespace StudentProjectsCenter.Controllers
             var term = new Term()
             {
                 Description = termDTO.Description,
-                Title = termDTO.Title
+                Title = termDTO.Title,
+                CreatedBy = User?.Identity?.Name ?? ""
             };
 
             await unitOfWork.termRepository.Create(term);
@@ -74,6 +77,7 @@ namespace StudentProjectsCenter.Controllers
             return CreatedAtAction(nameof(Create), new { id = term.Id }, new ApiResponse(201, result: term));
         }
 
+        [Authorize(Roles = "admin")]
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(int id, [FromBody, Required] TermUpdateDTO termDTO)
         {
@@ -105,6 +109,7 @@ namespace StudentProjectsCenter.Controllers
                 term.Description = termDTO.Description;
             }
             term.LastUpdatedAt = DateTime.UtcNow;
+            term.UpdatedBy = User?.Identity?.Name ?? "";
 
             unitOfWork.termRepository.Update(term);
 
@@ -117,6 +122,7 @@ namespace StudentProjectsCenter.Controllers
             return Ok(new ApiResponse(200, "Term updated successfully"));
         }
 
+        [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse>> Delete(int id)
         {

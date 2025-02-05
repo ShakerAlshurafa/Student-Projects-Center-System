@@ -1,32 +1,37 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.DTO;
 using StudentProjectsCenterSystem.Core.Entities.DTO.MyProject;
 using StudentProjectsCenterSystem.Core.Entities.DTO.ProjectDetails;
+using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.Entities.project;
 using StudentProjectsCenterSystem.Core.IRepositories;
 
 namespace StudentProjectsCenter.Controllers.ProjectDetails
 {
+    [Authorize]
     [Route("api/project-details")]
     [ApiController]
     public class ProjectDetailsController : ControllerBase
     {
         private readonly IUnitOfWork unitOfWork;
         private readonly IMapper mapper;
+        private readonly AzureFileUploader _uploadHandler;
 
-        public ProjectDetailsController(IUnitOfWork unitOfWork, IMapper mapper)
+        public ProjectDetailsController(IUnitOfWork unitOfWork, IMapper mapper, AzureFileUploader uploadHandler)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
+            _uploadHandler = uploadHandler;
         }
 
-
+        
         [HttpPost("{sectionId}")]
         public async Task<ActionResult<ApiResponse>> Create(
             int sectionId,
-            [FromBody] ProjectDetailsCreateDTO[] projectDetailsDto)
+            [FromForm] ProjectDetailsCreateDTO projectDetailsDto)
         {
             // Validate the model state
             if (!ModelState.IsValid)
@@ -37,7 +42,7 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
                 return BadRequest(new ApiValidationResponse(errors));
             }
 
-            if (projectDetailsDto == null || !projectDetailsDto.Any())
+            if (projectDetailsDto == null)
             {
                 return BadRequest(new ApiResponse(400, "No details provided"));
             }
@@ -48,15 +53,24 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
                 return NotFound(new ApiResponse(404, "Section not found"));
             }
 
-            var models = projectDetailsDto.Select(detail => new ProjectDetailEntity
+            string imagePath = "";
+            // Upload the image if present
+            if (projectDetailsDto.image != null && projectDetailsDto.image.Length > 0)
             {
-                Title = detail.Title,
-                Description = detail.Description,
-                IconData = detail.IconData ?? Array.Empty<byte>(),
-                ProjectDetailsSection = section
-            }).ToList();
+                var image = await _uploadHandler.UploadAsync(projectDetailsDto.image, "uploads");
+                imagePath = image?.Path ?? "";
+            }
 
-            await unitOfWork.projectDetailsRepository.CreateRange(models);
+            // Process the list and upload images asynchronously
+            var model =  new ProjectDetailEntity
+            {
+                Title = projectDetailsDto.Title,
+                Description = projectDetailsDto.Description,
+                ImagePath = imagePath, // Save the uploaded image URL
+                ProjectDetailsSection = section 
+            };
+
+            await unitOfWork.projectDetailsRepository.Create(model);
 
             // Save all changes
             int successSave = await unitOfWork.save();
@@ -73,7 +87,7 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(
             int id,
-            [FromBody] ProjectDetailsEditDTO section)
+            [FromForm] ProjectDetailsEditDTO section)
         {
             if (!ModelState.IsValid)
             {
@@ -90,9 +104,15 @@ namespace StudentProjectsCenter.Controllers.ProjectDetails
             }
 
             // Update Section fields
-            details.Title = section.Title;
-            details.Description = section.Description;
-            details.IconData = section.IconData;
+            details.Title = section.Title ?? details.Title;
+            details.Description = section.Description ?? details.Description;
+
+            if (section.image is { Length: > 0 })  
+            {
+                var uploadedImage = await _uploadHandler.UploadAsync(section.image, "uploads").ConfigureAwait(false);
+                details.ImagePath = uploadedImage?.Path ?? details.ImagePath;
+            }
+
 
             unitOfWork.projectDetailsRepository.Update(details);
 

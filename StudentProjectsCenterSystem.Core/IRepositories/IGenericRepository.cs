@@ -13,6 +13,6 @@ namespace StudentProjectsCenterSystem.Core.IRepositories
         public int Delete(int id);
         public Task<bool> IsExist(int id);
         public Task<bool> IsEmpty(Expression<Func<T, bool>>? filter = null);
-        public Task<int> Count(Expression<Func<T, bool>>? filter = null);
+        public Task<int> Count(Expression<Func<T, bool>>? filter = null, string? includeProperty = null);
     }
 }

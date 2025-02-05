@@ -15,7 +15,6 @@ namespace StudentProjectsCenterSystem.Core.IRepositories
         public IMessageRepository messageRepository { get; set; }
         public ICelenderRepository celenderRepository { get; set; }
 
-
         public Task<int> save();
     }
 }

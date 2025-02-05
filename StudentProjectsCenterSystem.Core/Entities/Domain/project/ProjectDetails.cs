@@ -15,8 +15,7 @@ namespace StudentProjectsCenterSystem.Core.Entities.project
         [Required(ErrorMessage = "Description is required.")]
         [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
         public string Description { get; set; } = string.Empty;
-        public byte[]? IconData { get; set; } = Array.Empty<byte>();   // Icon as binary data
-
+        public string? ImagePath { get; set; }
 
 
         // Foreign key to ProjectDetailsSection

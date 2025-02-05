@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.IRepositories;
 using System.ComponentModel.DataAnnotations;
@@ -125,9 +124,15 @@ namespace StudentProjectsCenter.Controllers
         }
 
 
-        [HttpPost("{roleId}/assign-to-user")]
-        public async Task<ActionResult<ApiResponse>> AssignRoleToUser(string roleId, [Required] string userId)
+        [HttpPost("{roleId}/assign-to-user/{userId}")]
+        public async Task<ActionResult<ApiResponse>> AssignRoleToUser(string roleId, string userId)
         {
+            // Validate input parameters
+            if (string.IsNullOrEmpty(roleId) || string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new ApiResponse(400, "Invalid roleId or userId."));
+            }
+
             var user = await userManager.FindByIdAsync(userId);
             if (user == null)
             {
@@ -135,7 +140,7 @@ namespace StudentProjectsCenter.Controllers
             }
 
             var role = await roleManager.FindByIdAsync(roleId);
-            if (role == null)
+            if (role == null || string.IsNullOrEmpty(role.Name))
             {
                 return NotFound(new ApiResponse(404, "Role not found."));
             }
@@ -149,10 +154,15 @@ namespace StudentProjectsCenter.Controllers
             return Ok(new ApiResponse(200, "Role assigned to user successfully."));
         }
 
-
-        [HttpPost("{roleId}/remove-from-user")]
-        public async Task<ActionResult<ApiResponse>> RemoveRoleFromUser(string roleId, [Required] string userId)
+        [HttpPost("{roleId}/remove-from-user/{userId}")]
+        public async Task<ActionResult<ApiResponse>> RemoveRoleFromUser(string roleId, string userId)
         {
+            // Validate input parameters
+            if (string.IsNullOrEmpty(roleId) || string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new ApiResponse(400, "Invalid roleId or userId."));
+            }
+
             var user = await userManager.FindByIdAsync(userId);
             if (user == null)
             {
@@ -160,15 +170,28 @@ namespace StudentProjectsCenter.Controllers
             }
 
             var role = await roleManager.FindByIdAsync(roleId);
-            if (role == null)
+            if (role == null || string.IsNullOrEmpty(role.Name))
             {
                 return NotFound(new ApiResponse(404, "Role not found."));
             }
 
             // Prevent deletion of the "user" role
-            if (role.Name == "user")
+            if (string.Equals(role.Name, "user", StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(new ApiResponse(400, "Not acceptable to remove the 'user' role."));
+            }
+
+            // Check if the user is participating in any active projects
+            var activeProjectsCount = await unitOfWork.projectRepository.Count(
+                project => project.Status == "active" &&
+                           project.UserProjects.Any(up => up.UserId == userId && !up.IsDeleted),
+                includeProperty: "UserProjects"
+            );
+
+            // Prevent deletion of the "supervisor" role if the user is participating in any active project
+            if (string.Equals(role.Name, "supervisor", StringComparison.OrdinalIgnoreCase) && activeProjectsCount > 0)
+            {
+                return BadRequest(new ApiResponse(400, "Cannot remove the 'supervisor' role. The user is active in an ongoing project."));
             }
 
             var result = await userManager.RemoveFromRoleAsync(user, role.Name);
