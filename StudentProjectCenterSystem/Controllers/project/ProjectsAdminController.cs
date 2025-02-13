@@ -23,15 +23,18 @@ namespace StudentProjectsCenter.Controllers.project
         private readonly IUnitOfWork unitOfWork;
         private readonly UserManager<LocalUser> userManager;
         private readonly IChatService chatService;
+        private readonly IEmailService emailService;
 
         public ProjectsAdminController(
             IUnitOfWork unitOfWork,
             UserManager<LocalUser> userManager,
-            IChatService chatService)
+            IChatService chatService,
+            IEmailService emailService)
         {
             this.unitOfWork = unitOfWork;
             this.userManager = userManager;
             this.chatService = chatService;
+            this.emailService = emailService;
         }
 
 
@@ -166,11 +169,56 @@ namespace StudentProjectsCenter.Controllers.project
 
             await unitOfWork.projectRepository.Create(model);
             int successSave = await unitOfWork.save();
-
             if (successSave == 0)
             {
                 return StatusCode(500, new ApiResponse(500, "Create Failed"));
             }
+
+            // Define email templates
+            string supervisorEmailContent = $@"
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; 
+                            border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;'>
+                    <h2 style='color: #0275d8; text-align: center;'>You Have Been Added as a Supervisor</h2>
+                    <p style='font-size: 16px; color: #555;'>Hello <strong>{supervisor.FirstName}</strong>,</p>
+                    <p style='font-size: 16px; color: #555;'>You have been added as a <strong>Supervisor</strong> for the project <strong>'{project.Name}'</strong>.</p>
+                    <p style='text-align: center; margin-top: 20px;'>
+                        <a href='http://localhost:5173/workgroups/{workgroup.Id}' 
+                            style='display: inline-block; padding: 12px 20px; background-color: #007bff; 
+                            color: #fff; text-decoration: none; font-size: 16px; border-radius: 5px;'>
+                            View Workgroup
+                        </a>
+                    </p>
+                    <p style='font-size: 14px; color: #777; text-align: center; margin-top: 20px;'>
+                        If you have any questions, please contact support.
+                    </p>
+                </div>";
+
+            // Send email to supervisor
+            await emailService.SendEmailAsync(supervisor.Email ?? "", "Added as Supervisor", supervisorEmailContent, true);
+
+            // Define customer email template
+            string customerEmailContent = $@"
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; 
+                            border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;'>
+                    <h2 style='color: #0275d8; text-align: center;'>You Have Been Added as a Customer</h2>
+                    <p style='font-size: 16px; color: #555;'>Hello <strong>{customer.FirstName}</strong>,</p>
+                    <p style='font-size: 16px; color: #555;'>You have been added as a <strong>Customer</strong> for the project <strong>'{project.Name}'</strong>.</p>
+                    <p style='text-align: center; margin-top: 20px;'>
+                        <a href='http://localhost:5173/workgroups/{workgroup.Id}' 
+                            style='display: inline-block; padding: 12px 20px; background-color: #007bff; 
+                            color: #fff; text-decoration: none; font-size: 16px; border-radius: 5px;'>
+                            View Workgroup
+                        </a>
+                    </p>
+                    <p style='font-size: 14px; color: #777; text-align: center; margin-top: 20px;'>
+                        If you have any questions, please contact support.
+                    </p>
+                </div>";
+
+            // Send email to customer
+            await emailService.SendEmailAsync(customer.Email ?? "", "Added as Customer", customerEmailContent, true);
+
+
 
             return CreatedAtAction(nameof(Create), new { id = model.Id }, new ApiResponse(201, result: project));
         }
@@ -304,7 +352,7 @@ namespace StudentProjectsCenter.Controllers.project
                     oldSupervisorEntry.DeletedNotes = updateProjectDTO.ChangeOldSupervisorNotes;
                     oldSupervisorEntry.DeletededAt = DateTime.UtcNow;
                     users.Add(oldSupervisorEntry);
-                    
+
                 }
 
                 var newSupervisorEntry = new UserProject { UserId = updateProjectDTO.SupervisorId, Role = "supervisor" };

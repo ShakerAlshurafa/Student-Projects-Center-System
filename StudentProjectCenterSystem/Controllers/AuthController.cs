@@ -53,7 +53,7 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(
+        public async Task<ActionResult<ApiResponse>> Register(
             [FromBody, Required] RegisterationRequestDTO model)
         {
             if (!ModelState.IsValid)
@@ -64,15 +64,15 @@ namespace StudentProjectsCenterSystem.Controllers
                 return BadRequest(new ApiValidationResponse(errors));
             }
 
-            model.FirstName = model.FirstName.Replace(" ", "");
-            model.MiddleName = model.MiddleName?.Replace(" ", "");
-            model.LastName = model.LastName.Replace(" ", "");
+            model.FirstName = model.FirstName.Trim();
+            model.MiddleName = model.MiddleName?.Trim();
+            model.LastName = model.LastName.Trim();
 
             var response = await authRepository.Register(model);
 
-            if (response is ApiValidationResponse)
+            if (response is ApiValidationResponse validationResponse)
             {
-                return BadRequest(response);
+                return BadRequest(validationResponse);
             }
             else if (response is ApiResponse apiResponse && !apiResponse.IsSuccess)
             {

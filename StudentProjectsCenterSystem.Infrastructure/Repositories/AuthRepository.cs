@@ -127,12 +127,12 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 
             var user = new LocalUser
             {
-                UserName = registerationRequestDTO.FirstName + "_" + registerationRequestDTO.LastName,
+                UserName = $"{registerationRequestDTO.FirstName}_{registerationRequestDTO.LastName}",
                 Email = registerationRequestDTO.Email,
                 NormalizedEmail = registerationRequestDTO.Email.ToUpper(),
-                FirstName = registerationRequestDTO.FirstName,
-                MiddleName = registerationRequestDTO.MiddleName,
-                LastName = registerationRequestDTO.LastName,
+                FirstName = registerationRequestDTO.FirstName.Trim(),
+                MiddleName = registerationRequestDTO.MiddleName?.Trim(),
+                LastName = registerationRequestDTO.LastName.Trim(),
                 CompanyName = registerationRequestDTO.CompanyName ?? "",
                 ProfileImageUrl = "https://spcs.blob.core.windows.net/uploads/profile-default-picture.png"
             };
@@ -141,7 +141,7 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
             {
                 try
                 {
-                    // Attempt to create the user
+                    // Create user
                     var result = await userManager.CreateAsync(user, registerationRequestDTO.Password);
                     if (!result.Succeeded)
                     {
@@ -149,8 +149,8 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                         return new ApiValidationResponse(errors, 400);
                     }
 
-                    // Assign roles to the user
-                    var addRolesResult = await userManager.AddToRoleAsync(user, "user");
+                    // Assign role to user
+                    var addRolesResult = await userManager.AddToRolesAsync(user, new List<string> { "user" });
                     if (!addRolesResult.Succeeded)
                     {
                         await userManager.DeleteAsync(user);
@@ -160,7 +160,6 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 
                     // Generate confirmation token
                     var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
-
                     var baseUrl = $"{request?.Scheme}://{request?.Host.Value}";
 
                     // Create confirmation link
@@ -168,11 +167,10 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
 
                     var subject = "Email Confirmation";
                     var message = $@"
-                        <p>Please confirm your email by clicking the button below:</p>
-                        <br>
-                        <a href='{confirmationLink}' style='display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #28a745; text-decoration: none; border-radius: 5px;'>Confirm Email</a>
-                        <p>If you did not request this, please ignore this email.</p>";
-
+                <p>Please confirm your email by clicking the button below:</p>
+                <br>
+                <a href='{confirmationLink}' style='display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #28a745; text-decoration: none; border-radius: 5px;'>Confirm Email</a>
+                <p>If you did not request this, please ignore this email.</p>";
 
                     // Send confirmation email
                     var emailSent = await emailService.SendEmailAsync(user.Email, subject, message, isHtml: true);
@@ -182,20 +180,21 @@ namespace StudentProjectsCenterSystem.Infrastructure.Repositories
                         return new ApiResponse(500, $"An error occurred while sending the message: {emailSent.ErrorMessage}");
                     }
 
-                    // If everything is successful, commit the transaction
+                    // Commit transaction
                     await transaction.CommitAsync();
 
                     // Return success response
                     return new ApiResponse(201, "User registered successfully",
-                            result: new LocalUserDTO { UserName = user.UserName, Email = user.Email });
+                        result: new LocalUserDTO { UserName = user.UserName, Email = user.Email });
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    return new ApiResponse(500, ex.Message);
+                    return new ApiResponse(500, $"An unexpected error occurred: {ex.Message}");
                 }
             }
         }
+
 
     }
 }

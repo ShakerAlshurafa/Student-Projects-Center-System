@@ -9,6 +9,7 @@ using StudentProjectsCenterSystem.Core.Entities;
 using StudentProjectsCenterSystem.Core.Entities.Domain.workgroup;
 using StudentProjectsCenterSystem.Core.Entities.DTO.Workgroup;
 using StudentProjectsCenterSystem.Core.IRepositories;
+using StudentProjectsCenterSystem.Services;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Net.NetworkInformation;
@@ -26,13 +27,19 @@ namespace StudentProjectsCenterSystem.Controllers
         private readonly IMapper mapper;
         private StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task.WorkgroupFile file;
         private readonly AzureFileUploader _uploadHandler;
+        private readonly IEmailService emailService;
 
-        public TasksController(IUnitOfWork unitOfWork, IMapper mapper, AzureFileUploader uploadHandler)
+        public TasksController(
+            IUnitOfWork unitOfWork, 
+            IMapper mapper, 
+            AzureFileUploader uploadHandler,
+            IEmailService emailService)
         {
             this.unitOfWork = unitOfWork;
             this.mapper = mapper;
             file = new StudentProjectsCenter.Core.Entities.DTO.Workgroup.Task.WorkgroupFile();
             _uploadHandler = uploadHandler;
+            this.emailService = emailService;
         }
 
         [Authorize(Roles = "supervisor")]
@@ -89,6 +96,7 @@ namespace StudentProjectsCenterSystem.Controllers
             return Ok(new ApiResponse(200, "Tasks retrieved successfully.", taskDto));
         }
 
+
         [Authorize(Roles = "supervisor")]
         [HttpPost("{workgroupId}")]
         public async Task<ActionResult<ApiResponse>> Create(
@@ -98,7 +106,7 @@ namespace StudentProjectsCenterSystem.Controllers
             //if (!taskDto.ValidExtensions.Any())
             //    return BadRequest(new ApiResponse(400, "Valid extensions are required."));
 
-            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId, "Project.UserProjects");
+            var workgroup = await unitOfWork.workgroupRepository.GetById(workgroupId, "Project.UserProjects.User");
             if (workgroup == null)
             {
                 return NotFound($"Workgroup with ID {workgroupId} was not found.");
@@ -188,6 +196,59 @@ namespace StudentProjectsCenterSystem.Controllers
             {
                 return StatusCode(500, new ApiResponse(500, "Create failed"));
             }
+
+
+            var students = workgroup.Project?.UserProjects
+                .Where(up => !up.IsDeleted && up.Role == "student" 
+                        && up.User.EmailConfirmed && !string.IsNullOrWhiteSpace(up.User.Email))
+                .Select(up => up.User)
+                .ToList();
+
+            if (students != null && students.Any())
+            {
+                foreach (var student in students)
+                {
+                    try
+                    {
+                        string emailContent = $@"
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; 
+                                        border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;'>
+                                <h2 style='color: #333; text-align: center;'>New Task Assigned</h2>
+                                <p style='font-size: 16px; color: #555;'>Hello <strong>{student.FirstName}</strong>,</p>
+                                <p style='font-size: 16px; color: #555;'>
+                                    A new task titled <strong>'{taskDto.Title}'</strong> has been assigned in your workgroup by 
+                                    <strong>{User?.Identity?.Name ?? "an unknown user"}</strong>.
+                                </p>
+                                <p><strong>Description:</strong> {taskDto.Description}</p>
+                                <p><strong>Due Date:</strong> {taskDto.End?.ToString("yyyy-MM-dd") ?? "No deadline"}</p>
+                                <p style='text-align: center;'>
+                                    <a href='http://localhost:5173/workgroups/{workgroupId}/tasks' 
+                                        style='display: inline-block; padding: 12px 20px; background-color: #007bff; 
+                                        color: #fff; text-decoration: none; font-size: 16px; border-radius: 5px;'>
+                                        View Task Details
+                                    </a>
+                                </p>
+                                <p style='font-size: 14px; color: #777; text-align: center; margin-top: 20px;'>
+                                    If you have any questions, please contact your supervisor.
+                                </p>
+                            </div>
+                                    ";
+
+                        var emailSent = await emailService.SendEmailAsync(student.Email ?? "", "New Task Assigned", emailContent, true);
+
+                        if (!emailSent.IsSuccess)
+                        {
+                            Console.WriteLine($"Error sending email to {student.Email}: {emailSent.ErrorMessage}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Exception while sending email to {student.Email}: {ex.Message}");
+                    }
+                }
+            }
+
+
 
             return CreatedAtAction(nameof(Create), new { id = task.Id },
                 new ApiResponse(201, "Task created successfully", result: task.Id));
@@ -402,15 +463,20 @@ namespace StudentProjectsCenterSystem.Controllers
 
 
             // Retrieve workgroup only if necessary
-            Workgroup? workgroup = null;
+            var workgroup = await unitOfWork.workgroupRepository.GetById(existingTask.WorkgroupId, "Project.UserProjects.User");
+            if (workgroup == null)
+            {
+                return NotFound(new ApiResponse(404, $"Workgroup with ID {existingTask.WorkgroupId} was not found."));
+            }
+
+            var students = workgroup.Project?.UserProjects
+                .Where(up => !up.IsDeleted && up.Role == "student"
+                        && up.User.EmailConfirmed && !string.IsNullOrWhiteSpace(up.User.Email))
+                .Select(up => up.User)
+                .ToList();
+                
             if (status == "completed" || existingTask.Status.ToLower() == "completed")
             {
-                workgroup = await unitOfWork.workgroupRepository.GetById(existingTask.WorkgroupId);
-                if (workgroup == null)
-                {
-                    return NotFound(new ApiResponse(404, $"Workgroup with ID {existingTask.WorkgroupId} was not found."));
-                }
-                
                 int countCompletedTasks = await unitOfWork.taskRepository.Count(t =>
                     t.WorkgroupId == workgroup.Id && t.Status.ToLower() == "completed");
 
@@ -437,6 +503,50 @@ namespace StudentProjectsCenterSystem.Controllers
             {
                 return StatusCode(500, new ApiResponse(500, "Failed to update task status."));
             }
+
+            if (students != null && students.Any())
+            {
+                foreach (var student in students)
+                {
+                    try
+                    {
+                        string emailContent = $@"
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; 
+                                        border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;'>
+                                <h2 style='color: #333; text-align: center;'>Task Status Updated</h2>
+                                <p style='font-size: 16px; color: #555;'>Hello <strong>{student.FirstName}</strong>,</p>
+                                <p style='font-size: 16px; color: #555;'>
+                                    The status of the task <strong>'{existingTask.Title}'</strong> has been updated by 
+                                    <strong>{User?.Identity?.Name ?? "an unknown user"}</strong>.
+                                </p>
+                                <p><strong>New Status:</strong> <span style='color: #007bff;'>{status}</span></p>
+                                <p><strong>Description:</strong> {existingTask.Description}</p>
+                                <p style='text-align: center;'>
+                                    <a href='http://localhost:5173/workgroups/{workgroup.Id}/tasks' 
+                                        style='display: inline-block; padding: 12px 20px; background-color: #007bff; 
+                                        color: #fff; text-decoration: none; font-size: 16px; border-radius: 5px;'>
+                                        View Task Details
+                                    </a>
+                                </p>
+                                <p style='font-size: 14px; color: #777; text-align: center; margin-top: 20px;'>
+                                    If you have any questions, please contact your supervisor.
+                                </p>
+                            </div>";
+
+                        var emailSent = await emailService.SendEmailAsync(student.Email ?? "", "Task Status Updated", emailContent, true);
+
+                        if (!emailSent.IsSuccess)
+                        {
+                            Console.WriteLine($"Error sending email to {student.Email}: {emailSent.ErrorMessage}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Exception while sending email to {student.Email}: {ex.Message}");
+                    }
+                }
+            }
+
 
             return Ok(new ApiResponse(200, "Task status updated successfully.", result: status));
         }
@@ -465,7 +575,7 @@ namespace StudentProjectsCenterSystem.Controllers
                     t.Workgroup.Project.UserProjects
                         .Any(u => u.Role == "student" && u.UserId == studentId);
 
-            var tasks = await unitOfWork.taskRepository.GetAll(filter, "Workgroup.Project.UserProjects");
+            var tasks = await unitOfWork.taskRepository.GetAll(filter, "Workgroup.Project.UserProjects.User");
             var task = tasks.FirstOrDefault();
             if (task == null)
             {
@@ -519,6 +629,56 @@ namespace StudentProjectsCenterSystem.Controllers
                 return StatusCode(500, new ApiResponse(500, "Failed to save submission."));
             }
 
+            var supervisors = task.Workgroup?.Project?.UserProjects
+                .Where(u => (u.Role == "supervisor" || u.Role == "co-supervisor") && !u.IsDeleted
+                             && u.User.EmailConfirmed && !string.IsNullOrWhiteSpace(u.User.Email))
+                .Select(u => u.User)
+                .ToList();
+
+            if (supervisors != null && supervisors.Any())
+            {
+                foreach (var supervisor in supervisors)
+                {
+                    try
+                    {
+                        string emailContent = $@"
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; 
+                                        border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;'>
+                                <h2 style='color: #333; text-align: center;'>Task Submitted</h2>
+                                <p style='font-size: 16px; color: #555;'>Hello <strong>{supervisor.FirstName}</strong>,</p>
+                                <p style='font-size: 16px; color: #555;'>
+                                    The task <strong>'{task.Title}'</strong> has been submitted by 
+                                    <strong>{User?.Identity?.Name ?? "a student"}</strong>.
+                                </p>
+                                <p><strong>Submission Date:</strong> <span style='color: #007bff;'>{DateTime.UtcNow}</span></p>
+                                <p><strong>Description:</strong> {task.Description}</p>
+                                <p style='text-align: center;'>
+                                    <a href='http://localhost:5173/workgroups/{task.WorkgroupId}/tasks' 
+                                        style='display: inline-block; padding: 12px 20px; background-color: #28a745; 
+                                        color: #fff; text-decoration: none; font-size: 16px; border-radius: 5px;'>
+                                        Review Submission
+                                    </a>
+                                </p>
+                                <p style='font-size: 14px; color: #777; text-align: center; margin-top: 20px;'>
+                                    Please review the submission and provide feedback.
+                                </p>
+                            </div>";
+
+                        var emailSent = await emailService.SendEmailAsync(supervisor.Email ?? "", "Task Submitted", emailContent, true);
+
+                        if (!emailSent.IsSuccess)
+                        {
+                            Console.WriteLine($"Error sending email to {supervisor.Email}: {emailSent.ErrorMessage}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Exception while sending email to {supervisor.Email}: {ex.Message}");
+                    }
+                }
+            }
+
+
             return Ok(new ApiResponse(200, "File submitted successfully."));
         }
 
@@ -526,6 +686,8 @@ namespace StudentProjectsCenterSystem.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse>> Delete(int id)
         {
+            var task = await unitOfWork.taskRepository.GetById(id, "Workgroup.Project.UserProjects.User");
+
             int successDelete = unitOfWork.taskRepository.Delete(id);
             if (successDelete == 0)
             {
@@ -537,6 +699,48 @@ namespace StudentProjectsCenterSystem.Controllers
             {
                 return StatusCode(500, new ApiResponse(500, "Deleted failed!"));
             }
+
+            var students = task.Workgroup?.Project?.UserProjects
+                .Where(up => !up.IsDeleted && up.Role == "student"
+                        &&up.User.EmailConfirmed  && !string.IsNullOrWhiteSpace(up.User.Email))
+                .Select(up => up.User)
+                .ToList();
+
+            if (students != null && students.Any())
+            {
+                foreach (var student in students)
+                {
+                    try
+                    {
+                        string emailContent = $@"
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; 
+                                        border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;'>
+                                <h2 style='color: #d9534f; text-align: center;'>Task Deleted</h2>
+                                <p style='font-size: 16px; color: #555;'>Hello <strong>{student.FirstName}</strong>,</p>
+                                <p style='font-size: 16px; color: #555;'>
+                                    The task <strong>'{task.Title}'</strong> has been <span style='color: #d9534f;'>deleted</span> by 
+                                    <strong>{User?.Identity?.Name ?? "an administrator"}</strong>.
+                                </p>
+                                <p><strong>Deleted On:</strong> <span style='color: #007bff;'>{DateTime.UtcNow}</span></p>
+                                <p style='font-size: 14px; color: #777;'>
+                                    If this was a mistake or you need further information, please contact your supervisor.
+                                </p>
+                            </div>";
+
+                        var emailSent = await emailService.SendEmailAsync(student.Email ?? "", "Task Deleted", emailContent, true);
+
+                        if (!emailSent.IsSuccess)
+                        {
+                            Console.WriteLine($"Error sending email to {student.Email}: {emailSent.ErrorMessage}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Exception while sending email to {student.Email}: {ex.Message}");
+                    }
+                }
+            }
+
 
             return Ok(new ApiResponse(200, "Deleted Successfully"));
         }

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StudentProjectsCenterSystem.Core.Entities.DTO.Authentication
 {
-    public class RegisterationRequestDTO
+    public class RegisterationRequestDTO 
     {
         [Required(ErrorMessage = "First name is required.")]
         [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters.")]
