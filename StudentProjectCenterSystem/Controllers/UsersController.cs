@@ -46,6 +46,10 @@ namespace StudentProjectsCenterSystem.Controllers
             foreach (var user in usersList)
             {
                 var roles = await userManager.GetRolesAsync(user);
+                if(roles.Count > 1)
+                {
+                    roles.Remove("user");
+                }
                 userDTOs.Add(new UserDTO
                 {
                     Id = user.Id,
